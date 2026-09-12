@@ -11,9 +11,10 @@
   "node_version": "18.20.2",
   "license": "MIT",
   "dependencies": {
-    "nedb":"",
-    "gqexpress":"",
-    "gqtryrun":""
+    "nedb":"1.8.0",
+    "gqexpress":"1.0.4",
+    "gqtryrun":"0.0.7",
+    "ini":"5.0.0"
   },
   "devDependencies": {
     "gqtest": ">=0.0.21",
@@ -23,7 +24,7 @@
   "scripts": {
     "start": "node --require coffeescript/register index.coffee",
     "test": "node --require coffeescript/register test.coffee",
-    "test:watch": "nodemon --delay 10 -q -x \"npm test\"",
+    "test:watch": "nodemon --delay 3 -q -x \"npm test\"",
     "test:slow": "mocha --openssl-legacy-provider -require coffeescript/register --no-color --reporter min -t 20000 test/test.slow.coffee",
     "install:nobin": "npm install --no-bin-links --no-optional --omit=optional --ignore-scripts",
     "install:prod": "npm install --production",

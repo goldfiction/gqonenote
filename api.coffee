@@ -34,6 +34,7 @@
 #     "type":"note",
 #     "page":1,
 #     "id":1,
+#     "title":"",
 #     "text":"",
 #     "enabled":true
 # }
@@ -237,6 +238,8 @@ note.create=(o,cb)->
         "project":o.doc.project
         "section":o.doc.section
         "page":o.doc.page
+        "title":o.doc.title||""
+        "text":o.doc.text||""
         "id":id.noteID+1
         "enabled":true
         "createdAt": new Date() 
@@ -262,6 +265,12 @@ note.rename=(o,cb)->
       cb err,numAffected
   tryrun.run o.query,o,cb
 
+note.updateTitle=(o,cb)->
+  o.query=(o,cb)->
+    o.db.update {type:"note",id:o.doc.id},{$set:{title:o.doc.title}},{multi:false},(err,numAffected)->
+      cb err,numAffected
+  tryrun.run o.query,o,cb
+
 note.updateText=(o,cb)->
   o.query=(o,cb)->
     o.db.update {type:"note",id:o.doc.id},{$set:{text:o.doc.text}},{multi:false},(err,numAffected)->
@@ -276,4 +285,4 @@ note.remove=(o,cb)->
 
 #---
 
-module.exports={mod:mod,project:project}
+module.exports={mod:mod,project:project,section:section,page:page,note:note}
