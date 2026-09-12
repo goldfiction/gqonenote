@@ -1,0 +1,57 @@
+{
+  "name": "gqonenote",
+  "version": "0.0.1",
+  "description": "A replica for Microsoft Onenote done in nodejs with a clean footprint.",
+  "repository": "git@github.com:goldfiction/gqtesmplate5.git",
+  "contributors": [
+    "glidev5 <glidev5@gmail.com> (https://www.linkedin.com/in/grant-li-194a4521/)"
+  ],
+  "private": false,
+  "main": "index.coffee",
+  "node_version": "18.20.2",
+  "license": "MIT",
+  "dependencies": {
+    "nedb":"",
+    "gqexpress":"",
+    "gqtryrun":""
+  },
+  "devDependencies": {
+    "gqtest": ">=0.0.21",
+    "coffeescript": "2.7.0",
+    "nodemon": "3.1.10"
+  },
+  "scripts": {
+    "start": "node --require coffeescript/register index.coffee",
+    "test": "node --require coffeescript/register test.coffee",
+    "test:watch": "nodemon --delay 10 -q -x \"npm test\"",
+    "test:slow": "mocha --openssl-legacy-provider -require coffeescript/register --no-color --reporter min -t 20000 test/test.slow.coffee",
+    "install:nobin": "npm install --no-bin-links --no-optional --omit=optional --ignore-scripts",
+    "install:prod": "npm install --production",
+    "install:prod2": "npm install --omit=dev --no-bin-links",
+    "git": "git add .; git commit -m \"update\"; echo gitted...",
+    "git:push": "git push origin master & git push nodegit master & git push bitbucket master & echo pushed...",
+    "git:setup": "git config --global user.name \"username\";git config --global user.email \"username@gmail.com\";git branch --set-upstream-to=origin/master master;",
+    "test:dl": "npm run lint && npm run check && npm run testonly",
+    "test:ci": "npm run lint && npm run check && npm run testonly -- --coverage",
+    "lint": "eslint .",
+    "check": "flow check --max-warnings 0",
+    "build": "babel src --ignore src/__tests__ --out-dir dist/ ; cp src/index.js dist/index.js.flow ; cp src/index.d.ts dist/",
+    "watch": "babel resources/watch.js | node",
+    "testonly": "jest src",
+    "prerelease": ". ./resources/prepublish.sh",
+    "release": "changeset publish"
+  },
+  "prettier": {
+    "arrowParens": "avoid",
+    "singleQuote": true,
+    "trailingComma": "all",
+    "overrides": [
+      {
+        "files": "src/**/*.js",
+        "options": {
+          "parser": "babel-flow"
+        }
+      }
+    ]
+  }
+}
