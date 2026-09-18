@@ -12,9 +12,6 @@ block content
                         button#editProject.btn.btn-secondary(type="button") [E]
 
                         select(name="project",id="projects")
-                            option(value="apple") Apple
-                            option(value="banana") Banana
-                            option(value="cherry") Cherry
         .row
             .col-xs-12.col-md-1
                 div.inblock
@@ -22,7 +19,7 @@ block content
                     button#addSection.btn.btn-secondary(type="button") [+]
                     button#removeSection.btn.btn-secondary(type="button") [-]
                     button#editSection.btn.btn-secondary(type="button") [E]
-                div.inblock.wide
+                div.inblock.wide#sections
                     div.selector.selected#volvo volvo
                     div.selector#volvo2 volvo2
                     div.selector#volvo3 volvo3
@@ -48,4 +45,7 @@ block content
                     div.selector#volvo3 volvo3
             .col-xs-12.col-md-9
                 #editor
+    .popup
+        input#popupInput(type="text",placeholder="Type something...")
+        button#submitBtn Read Text
     script(src="/js/aceeditor.js")

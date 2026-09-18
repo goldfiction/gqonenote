@@ -25,6 +25,7 @@ gqexpress.startServer  # invoke start server like this
   set:(app,o)->  # override set object like this 
     return app  # kindly return app back to startServer with app.sets 
   use:(app,o)->  # override use object like this 
+    app=api.routeHandler app,db
     app.get "/",(req,res)-> 
       res.render "index",  # you can render jade in /views folder like this 
         title:"gqonenote"  # meta info passed to jade and render using #{title} 

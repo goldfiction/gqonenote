@@ -285,9 +285,101 @@ note.remove=(o,cb)->
 
 #---
 
-routeHandler=(app)->
+routeHandler=(app,db)->
+  app.get "/project",(req,res)->
+    project.list {db:db},(e,r)->
+      res.send 200,r
   
+  app.post "/project",(req,res)->
+    project.create {db:db,doc:req.body},(e,r)->
+      project.list {db:db},(e,r)->
+        res.send 200,r
+  
+  app.put "/project",(req,res)->
+    project.rename {db:db,doc:req.body},(e,r)->
+      project.list {db:db},(e,r)->
+        res.send 200,r
+  
+  app.delete "/project",(req,res)->
+    project.remove {db:db,doc:req.body},(e,r)->
+      project.list {db:db},(e,r)->
+        res.send 200,r
+  
+  #--
+  
+  app.get "/section",(req,res)->
+    section.list {db:db,doc:req.params},(e,r)->
+      res.send 200,r
+  
+  app.post "/section",(req,res)->
+    section.create {db:db,doc:req.body},(e,r)->
+      section.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+
+  app.put "/section",(req,res)->
+    section.rename {db:db,doc:req.body},(e,r)->
+      section.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  app.delete "/section",(req,res)->
+    section.remove {db:db,doc:req.body},(e,r)->
+      section.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  #--
+
+  app.get "/page",(req,res)->
+    page.list {db:db,doc:req.params},(e,r)->
+      res.send 200,r
+  
+  app.post "/page",(req,res)->
+    page.create {db:db,doc:req.body},(e,r)->
+      page.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  app.put "/page",(req,res)->
+    page.rename {db:db,doc:req.body},(e,r)->
+      page.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  app.delete "/page",(req,res)->
+    page.remove {db:db,doc:req.body},(e,r)->
+      page.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+
+  #--
+
+  app.get "/note",(req,res)->
+    note.list {db:db,doc:req.params},(e,r)->
+      res.send 200,r
+  
+  app.post "/note",(req,res)->
+    note.create {db:db,doc:req.body},(req,res)->
+      note.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  app.put "/note/title",(req,res)->
+    note.updateTitle {db:db,doc:req.body},(e,r)->
+      note.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+
+  app.put "/note/text",(req,res)->
+    note.updateText {db:db,doc:req.body},(e,r)->
+      note.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+
+  app.put "/note",(req,res)->
+    note.rename {db:db,doc:req.body},(e,r)->
+      note.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+  
+  app.delete "/note",(req,res)->
+    note.remove {db:db,doc:req.body},(e,r)->
+      note.list {db:db,doc:req.body},(e,r)->
+        res.send 200,r
+
+  return app
 
 #---
 
-module.exports={mod:mod,project:project,section:section,page:page,note:note}
+module.exports={mod:mod,project:project,section:section,page:page,note:note,routeHandler:routeHandler}
