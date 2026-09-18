@@ -285,4 +285,9 @@ note.remove=(o,cb)->
 
 #---
 
+routeHandler=(app)->
+  
+
+#---
+
 module.exports={mod:mod,project:project,section:section,page:page,note:note}

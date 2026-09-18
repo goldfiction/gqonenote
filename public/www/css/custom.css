@@ -1,0 +1,38 @@
+.ace_editor{
+    height:900px;
+}
+
+.inblock{
+    display:inline-block;
+}
+
+.btn{
+    padding:1px;
+    margin-bottom: 5px;
+}
+
+.well{
+    background-color: #EEE;
+}
+
+.selector{
+    background-color:transparent;
+    width:100%;
+    text-align: left;
+}
+
+.selector.selected{
+    background-color: #6E6;
+}
+
+.hide{
+    display:none;
+}
+
+.wide{
+    width:100%;
+}
+
+.col-md-1{
+    border:1px;
+}

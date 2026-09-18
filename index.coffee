@@ -15,8 +15,8 @@ gqexpress.startServer  # invoke start server like this
       users: 
         admin:"password" 
     server: 
-      port:7000 
-      sslport:7443 
+      port:3000 
+      sslport:3443 
       domain:"0.0.0.0" 
       forceSecure:false 
     general: 
@@ -27,7 +27,7 @@ gqexpress.startServer  # invoke start server like this
   use:(app,o)->  # override use object like this 
     app.get "/",(req,res)-> 
       res.render "index",  # you can render jade in /views folder like this 
-        title:"gqmario"  # meta info passed to jade and render using #{title} 
+        title:"gqonenote"  # meta info passed to jade and render using #{title} 
     return app  # kindly return app back to startServer with app.gets 
 ,(e,o)-> 
   log " All done!"  # if you see this, then the server is running correctly.
