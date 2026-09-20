@@ -15,8 +15,8 @@ gqexpress.startServer  # invoke start server like this
       users: 
         admin:"password" 
     server: 
-      port:3000 
-      sslport:3443 
+      port:13000 
+      sslport:13443 
       domain:"0.0.0.0" 
       forceSecure:false 
     general: 

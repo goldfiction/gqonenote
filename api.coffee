@@ -40,6 +40,7 @@
 # }
 
 tryrun=require "gqtryrun"
+l=console.log
 
 #---
 
@@ -114,20 +115,20 @@ project.create=(o,cb)->
 project.list=(o,cb)->
   o.query=(o,cb)->
     o.db.find
-      "type":"project"
-      "enabled":true
+      type:"project"
+      enabled:true
     ,cb
   tryrun.run o.query,o,cb
 
 project.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:o.doc.id},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
+    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
       cb err,numAffected
   tryrun.run o.query,o,cb
 
 project.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:o.doc.id},{$set:{enabled:false}},{multi:false},(err,numAffected)->
+    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},(err,numAffected)->
       cb err,numAffected
   tryrun.run o.query,o,cb
 
@@ -145,7 +146,7 @@ section.create=(o,cb)->
       o.doc= 
         "name":o.doc.name||"section"
         "type":"section"
-        "project":o.doc.project
+        "project":JSON.parse(o.doc.project)
         "id":id.sectionID+1
         "enabled":true
         "createdAt": new Date() 
@@ -158,20 +159,21 @@ section.list=(o,cb)->
   o.query=(o,cb)->
     o.db.find
       "type":"section"
-      "project":o.doc.project
+      "project":JSON.parse(o.doc.project)
       "enabled":true
     ,cb
   tryrun.run o.query,o,cb
 
 section.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"section",id:o.doc.id},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
+    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
       cb err,numAffected
   tryrun.run o.query,o,cb
 
 section.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"section",id:o.doc.id},{$set:{enabled:false}},{multi:false},(err,numAffected)->
+    l o
+    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},(err,numAffected)->
       cb err,numAffected
   tryrun.run o.query,o,cb
 
@@ -308,7 +310,8 @@ routeHandler=(app,db)->
   #--
   
   app.get "/section",(req,res)->
-    section.list {db:db,doc:req.params},(e,r)->
+    l req.query
+    section.list {db:db,doc:req.query},(e,r)->
       res.send 200,r
   
   app.post "/section",(req,res)->
@@ -329,7 +332,7 @@ routeHandler=(app,db)->
   #--
 
   app.get "/page",(req,res)->
-    page.list {db:db,doc:req.params},(e,r)->
+    page.list {db:db,doc:req.query},(e,r)->
       res.send 200,r
   
   app.post "/page",(req,res)->
@@ -350,7 +353,7 @@ routeHandler=(app,db)->
   #--
 
   app.get "/note",(req,res)->
-    note.list {db:db,doc:req.params},(e,r)->
+    note.list {db:db,doc:req.query},(e,r)->
       res.send 200,r
   
   app.post "/note",(req,res)->
