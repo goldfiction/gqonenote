@@ -10,40 +10,34 @@ block content
                         button#addProject.btn.btn-secondary(type="button") [+]
                         button#removeProject.btn.btn-secondary(type="button") [-]
                         button#editProject.btn.btn-secondary(type="button") [E]
-
                         select(name="project",id="projects")
         .row
-            .col-xs-12.col-md-1
-                div.inblock
-                    p.inblock Section
-                    button#addSection.btn.btn-secondary(type="button") [+]
-                    button#removeSection.btn.btn-secondary(type="button") [-]
-                    button#editSection.btn.btn-secondary(type="button") [E]
-                div.inblock.wide#sections
-                    div.selector.selected#volvo volvo
-                    div.selector#volvo2 volvo2
-                    div.selector#volvo3 volvo3
-            .col-xs-12.col-md-1
-                div.inblock
-                    p.inblock Page
-                    button#addPage.btn.btn-secondary(type="button") [+]
-                    button#removePage.btn.btn-secondary(type="button") [-]
-                    button#editPage.btn.btn-secondary(type="button") [E]
-                div.inblock.wide
-                    div.selector.selected#volvo volvo
-                    div.selector#volvo2 volvo2
-                    div.selector#volvo3 volvo3
-            .col-xs-12.col-md-1
-                div.inblock
-                    p.inblock Note
-                    button#addNote.btn.btn-secondary(type="button") [+]
-                    button#removeNote.btn.btn-secondary(type="button") [-]
-                    button#editNote.btn.btn-secondary(type="button") [E]
-                div.inblock.wide
-                    div.selector.selected#volvo volvo
-                    div.selector#volvo2 volvo2
-                    div.selector#volvo3 volvo3
-            .col-xs-12.col-md-9
+            .col-xs-12.col-md-2
+                .border
+                    div.inblock
+                        p.inblock Section
+                        button#addSection.btn.btn-secondary(type="button") [+]
+                        button#removeSection.btn.btn-secondary(type="button") [-]
+                        button#editSection.btn.btn-secondary(type="button") [E]
+                    div.inblock.wide#sections
+                .border
+                    div.inblock
+                        p.inblock Page
+                        button#addPage.btn.btn-secondary(type="button") [+]
+                        button#removePage.btn.btn-secondary(type="button") [-]
+                        button#editPage.btn.btn-secondary(type="button") [E]
+                    div.inblock.wide#pages
+                .border
+                    div.inblock
+                        p.inblock Note
+                        button#addNote.btn.btn-secondary(type="button") [+]
+                        button#removeNote.btn.btn-secondary(type="button") [-]
+                        button#editNote.btn.btn-secondary(type="button") [E]
+                        button#saveNote.btn.btn-secondary(type="button") [Save]
+                        button#saveAsNote.btn.btn-secondary(type="button") [Save As]
+                        button#duplicateNote.btn.btn-secondary(type="button") [Duplicate]
+                    div.inblock.wide#notes
+            .col-xs-12.col-md-10
                 #editor
     #popupInputBox.popup.fade
         input#popupInput(type="text",placeholder="Type something...")

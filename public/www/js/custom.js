@@ -10,13 +10,25 @@ l=console.log
 project={}
 section={}
 page={}
-note={}
+note = {}
+inputBox = {}
+project.selected = null;
+section.selected = null;
+page.selected = null;
+note.selected = null;
+inputBox.hide = function () {
+    $("#popupInputBox").addClass("fade")
+}
+inputBox.show = function () {
+    $("#popupInputBox").removeClass("fade")
+}
 
 project.updateList=function(projects){
     $("#projects").empty()
     projects.forEach(element => {
         $("#projects").append(new Option(element.name, element.id));
     });
+    project.selected=JSON.parse($("#projects").val())
 }
 
 project.list=function(){
@@ -96,11 +108,11 @@ section.updateList=function(sections){
     });
     $(".section").on("click",function(elem){
         try {
-            $('.section[value="'+selectedSection+'"]').removeClass("selected")            
+            $('.section[value="'+section.selected+'"]').removeClass("selected")            
         } catch (e) { }
-        selectedSection = elem.target.attributes.value.nodeValue
+        section.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
-        l("selected section: " + selectedSection)
+        l("selected section: " + section.selected)
         page.list()
     })
 }
@@ -109,7 +121,7 @@ section.list=function(){
     $.ajax({
         url: '/section',
         type: 'GET',
-        data: {project:$("#projects").val()},
+        data: {project:project.selected},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
@@ -125,7 +137,7 @@ section.create=function(name,cb){
     $.ajax({
         url: '/section',
         type: 'POST',
-        data: {project:$("#projects").val(),name:name},
+        data: {project:project.selected,name:name},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
@@ -142,7 +154,7 @@ section.remove=function(id,cb){
     $.ajax({
         url: '/section',
         type: 'DELETE',
-        data: {id:id,project:$("#projects").val()},
+        data: {id:id,project:project.selected},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
@@ -159,7 +171,7 @@ section.rename=function(id,name,cb){
     $.ajax({
         url: '/section',
         type: 'PUT',
-        data: {id:id,project:$("#projects").val(),name:name},
+        data: {id:id,project:project.selected,name:name},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
@@ -179,20 +191,26 @@ page.updateList=function(pages){
     pages.forEach(element => {
         $("#pages").append("<div class=\"selector page\" value=\""+element.id+"\">"+element.name+"</div>");
     });
+    $(".page").on("click",function(elem){
+        try {
+            $('.page[value="'+page.selected+'"]').removeClass("selected")            
+        } catch (e) { }
+        page.selected = elem.target.attributes.value.nodeValue
+        $(this).addClass("selected")
+        l("selected page: " + page.selected)
+        note.list()
+    })
 }
 
 page.list=function(){
     $.ajax({
         url: '/page',
         type: 'GET',
-        data: {project:$("#projects").val(),section:selectedSection},
+        data: {project:project.selected,section:section.selected},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
-            $("#pages").html("")
-            response.forEach(element => {
-                $("#pages").append("<div class=\"selector\" value=\""+element.id+"\">"+element.name+"</div>");
-            });
+            page.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -204,10 +222,11 @@ page.create=function(name){
     $.ajax({
         url: '/page',
         type: 'POST',
-        data: {project:$("#projects").val(),section:selectedSection,name:name},
+        data: {project:project.selected,section:section.selected,name:name},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
+            page.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -219,10 +238,11 @@ page.remove=function(id){
     $.ajax({
         url: '/page',
         type: 'DELETE',
-        data: {id:id},
+        data: {project:project.selected,section:section.selected,id:id},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
+            page.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -234,10 +254,11 @@ page.rename=function(id,name){
     $.ajax({
         url: '/page',
         type: 'PUT',
-        data: {id:id,name:name},
+        data: {project:project.selected,section:section.selected,id:id,name:name},
         dataType: 'json', 
         success: function(response) {
             l('successful:', response);
+            page.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -246,22 +267,54 @@ page.rename=function(id,name){
 }
 
 //--
+note.getText=function(){
+    $.ajax({
+        url: '/note/text',
+        type: 'GET',
+        data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:', response);
+            if (response.length == 1) {
+                try {
+                    editor.setValue(atob(response[0].text))                    
+                } catch (e) {
+                    editor.setValue("")
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+}
 
 note.updateList=function(notes){
     $("#notes").html("")
     notes.forEach(element => {
         $("#notes").append("<div class=\"selector note\" value=\""+element.id+"\">"+element.name+"</div>");
     });
+    $(".note").on("click",function(elem){
+        try {
+            $('.note[value="'+note.selected+'"]').removeClass("selected")            
+        } catch (e) { }
+        note.selected = elem.target.attributes.value.nodeValue
+        $(this).addClass("selected")
+        l("selected note: " + note.selected)
+        note.getText()
+        //editor.setValue(notes.filter((elem) => {return elem.id==JSON.parse(note.selected)}).text||"")
+    })
 }
 
 note.list=function(){
     $.ajax({
         url: '/note',
         type: 'GET',
-        data: {project:$("#projects").val(),section:selectedSection,page:selectedPage},
+        data: {project:project.selected,section:section.selected,page:page.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            l('successful:',response);
+            note.updateList(response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -273,10 +326,43 @@ note.create=function(name){
     $.ajax({
         url: '/note',
         type: 'POST',
-        data: {project:$("#projects").val(),section:selectedSection,page:selectedPage,name:name},
+        data: {project:project.selected,section:section.selected,page:page.selected,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            l('successful:',response);
+            note.updateList(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+}
+
+note.saveas=function(name){
+    $.ajax({
+        url: '/note',
+        type: 'POST',
+        data: {project:project.selected,section:section.selected,page:page.selected,name:name,text:btoa(editor.getValue())},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:',response);
+            note.updateList(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+}
+
+note.duplicate=function(name){
+    $.ajax({
+        url: '/note',
+        type: 'POST',
+        data: {project:project.selected,section:section.selected,page:page.selected,name:"copy of "+name,text:btoa(editor.getValue())},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:',response);
+            note.updateList(response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -288,10 +374,11 @@ note.remove=function(id){
     $.ajax({
         url: '/note',
         type: 'DELETE',
-        data: {id:id},
+        data: {project:project.selected,section:section.selected,page:page.selected,id:id},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            l('successful:',response);
+            note.updateList(response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -303,10 +390,26 @@ note.rename=function(id,name){
     $.ajax({
         url: '/note',
         type: 'PUT',
-        data: {id:id,name:name},
+        data: {project:project.selected,section:section.selected,page:page.selected,id:id,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            l('successful:',response);
+            note.updateList(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+}
+
+note.text=function(){
+    $.ajax({
+        url: '/note/text',
+        type: 'PUT',
+        data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(editor.getValue())},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:',response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -318,11 +421,12 @@ note.rename=function(id,name){
 inputStatus = null;
 
 initOnEvent=function(){
-    $('#projects').on('change', function() {
+    $('#projects').on('change', function () {
+        project.selected=JSON.parse($("#projects").val())
         section.list()
     });
 
-    $(".btn").on("click",function(elem){
+    $(".btn").on("click", function (elem) {
         l(elem)
         if (elem.target.id == "addProject") {
             //l("addProject!")
@@ -330,22 +434,24 @@ initOnEvent=function(){
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removeProject") {
-            project.remove($("#projects").val(), function (e, response) {
+            project.remove(project.selected, function (e, response) {
                 if (!e) {
                     project.updateList(response);
                 }
             })
         }
         else if (elem.target.id == "editProject") {
-            inputStatus="editProject"
+            inputStatus = "editProject"
+            $("#popupInput").val($("#projects option:selected").text())
             $("#popupInputBox").removeClass("fade")
         }
+        //--
         else if (elem.target.id == "addSection") {
             inputStatus="addSection"
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removeSection") {
-            section.remove(selectedSection, function (e, response) {
+            section.remove(section.selected, function (e, response) {
                 if (!e) {
                     section.list()
                 }
@@ -353,28 +459,66 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "editSection") {
             inputStatus="editSection"
+            $("#popupInput").val($(".section.selected").text())
             $("#popupInputBox").removeClass("fade")
         }
+        //--
         else if (elem.target.id == "addPage") {
             inputStatus="addPage"
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removePage") {
-            page.remove(selectedPage, function (e, response) {
+            page.remove(page.selected, function (e, response) {
                 if (!e) {
                     page.list()
                 }
             })
         }
         else if (elem.target.id == "editPage") {
-            inputStatus="editPage"
+            inputStatus = "editPage"
+            $("#popupInput").val($(".page.selected").text())
             $("#popupInputBox").removeClass("fade")
         }
+        //--
+        else if (elem.target.id == "addNote") {
+            inputStatus="addNote"
+            $("#popupInputBox").removeClass("fade")
+        }
+        else if (elem.target.id == "removeNote") {
+            note.remove(note.selected, function (e, response) {
+                if (!e) {
+                    note.list()
+                }
+            })
+        }
+        else if (elem.target.id == "editNote") {
+            inputStatus = "editNote"
+            $("#popupInput").val($(".note.selected").text())
+            $("#popupInputBox").removeClass("fade")
+        }
+        else if (elem.target.id == "saveNote") {
+            note.text()
+        }
+        else if (elem.target.id == "saveAsNote") {
+            inputStatus = "saveAsNote"
+            $("#popupInput").val($(".note.selected").text())
+            $("#popupInputBox").removeClass("fade")
+        }
+        else if (elem.target.id == "duplicateNote") {
+            note.duplicate($(".note[value='"+note.selected+"']").text(), $("#popupInput").val(), function (e, response) {
+                $("#popupInput").val("")
+                if (!e) {
+                    note.list()
+                }
+            })
+        }
+        //--
         else if (elem.target.id == "cancelBtn") {
             $("#popupInputBox").addClass("fade")
             $("#popupInput").val("")
         }
         else if (elem.target.id == "submitBtn") {
+            //--
             if (inputStatus == "addProject") {
                 $("#popupInputBox").addClass("fade")
                 project.create($("#popupInput").val(), function (e, response) {
@@ -382,12 +526,13 @@ initOnEvent=function(){
                 })
             } else if (inputStatus == "editProject") {
                 $("#popupInputBox").addClass("fade")
-                project.rename($("#projects").val(), $("#popupInput").val(), function (e, response) {
+                project.rename(project.selected, $("#popupInput").val(), function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         project.updateList(response)                        
                     }
                 })
+                //--
             } else if (inputStatus == "addSection") {
                 $("#popupInputBox").addClass("fade")
                 section.create($("#popupInput").val(), function (e, response) {
@@ -398,12 +543,13 @@ initOnEvent=function(){
                 })
             } else if (inputStatus == "editSection") {
                 $("#popupInputBox").addClass("fade")
-                section.rename(selectedSection, $("#popupInput").val(), function (e, response) {
+                section.rename(section.selected, $("#popupInput").val(), function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         section.list()
                     }
                 })
+                //--
             } else if (inputStatus == "addPage") {
                 $("#popupInputBox").addClass("fade")
                 page.create($("#popupInput").val(), function (e, response) {
@@ -414,10 +560,35 @@ initOnEvent=function(){
                 })
             } else if (inputStatus == "editPage") {
                 $("#popupInputBox").addClass("fade")
-                page.rename(selectedPage, $("#popupInput").val(), function (e, response) {
+                page.rename(page.selected, $("#popupInput").val(), function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         page.list()
+                    }
+                })
+                //--
+            } else if (inputStatus == "addNote") {
+                $("#popupInputBox").addClass("fade")
+                note.create($("#popupInput").val(), function (e, response) {
+                    $("#popupInput").val("")
+                    if (!e) {
+                        note.list()
+                    }
+                })
+            } else if (inputStatus == "editNote") {
+                $("#popupInputBox").addClass("fade")
+                note.rename(note.selected, $("#popupInput").val(), function (e, response) {
+                    $("#popupInput").val("")
+                    if (!e) {
+                        note.list()
+                    }
+                })
+            } else if (inputStatus == "saveAsNote") {
+                $("#popupInputBox").addClass("fade")
+                note.saveas($("#popupInput").val(), function (e, response) {
+                    $("#popupInput").val("")
+                    if (!e) {
+                        note.list()
                     }
                 })
             }
@@ -430,9 +601,5 @@ initOnEvent=function(){
 
 $(document).ready(function() {
     initOnEvent()
-
-    //project.create("test")
     project.list()
-    //section.list()
-
 });

@@ -64,8 +64,7 @@ mod.getID=(o,cb)->
         cb e,r
 
 mod.updateID=(o,cb)->
-  o.db.update {type:'index'},{$set:o.doc},{multi:false},(err,numAffected)->
-    cb err,numAffected
+  o.db.update {type:'index'},{$set:o.doc},{multi:false},cb
 
 #---
 
@@ -122,14 +121,12 @@ project.list=(o,cb)->
 
 project.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 project.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
@@ -166,15 +163,13 @@ section.list=(o,cb)->
 
 section.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 section.remove=(o,cb)->
   o.query=(o,cb)->
     l o
-    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
@@ -191,8 +186,8 @@ page.create=(o,cb)->
       o.doc= 
         "name":o.doc.name||"page"
         "type":"page"
-        "project":o.doc.project
-        "section":o.doc.section
+        "project":JSON.parse(o.doc.project)
+        "section":JSON.parse(o.doc.section)
         "id":id.pageID+1
         "enabled":true
         "createdAt": new Date() 
@@ -203,24 +198,33 @@ page.create=(o,cb)->
 
 page.list=(o,cb)->
   o.query=(o,cb)->
+    l o
     o.db.find
       "type":"page"
-      "project":o.doc.project
-      "section":o.doc.section
+      "project":JSON.parse(o.doc.project)
+      "section":JSON.parse(o.doc.section)
       "enabled":true
     ,cb
   tryrun.run o.query,o,cb
 
 page.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"page",id:o.doc.id},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update 
+      type:"page"
+      id:JSON.parse(o.doc.id)
+      project:JSON.parse(o.doc.project)
+      section:JSON.parse(o.doc.section)
+    ,{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 page.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"page",id:o.doc.id},{$set:{enabled:false}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update 
+      type:"page"
+      id:JSON.parse(o.doc.id)
+      project:JSON.parse(o.doc.project)
+      section:JSON.parse(o.doc.section)
+    ,{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
@@ -237,9 +241,9 @@ note.create=(o,cb)->
       o.doc= 
         "name":o.doc.name||"note"
         "type":"note"
-        "project":o.doc.project
-        "section":o.doc.section
-        "page":o.doc.page
+        "project":JSON.parse(o.doc.project)
+        "section":JSON.parse(o.doc.section)
+        "page":JSON.parse(o.doc.page)
         "title":o.doc.title||""
         "text":o.doc.text||""
         "id":id.noteID+1
@@ -252,37 +256,41 @@ note.create=(o,cb)->
 
 note.list=(o,cb)->
   o.query=(o,cb)->
+    l o
     o.db.find
       "type":"note"
-      "project":o.doc.project
-      "section":o.doc.section
-      "page":o.doc.page
+      "project":JSON.parse(o.doc.project)
+      "section":JSON.parse(o.doc.section)
+      "page":JSON.parse(o.doc.page)
       "enabled":true
-    ,cb
+    ,(e,r)->
+      r = r.map(({ text, ...rest }) => rest)
+      cb e,r
   tryrun.run o.query,o,cb
 
 note.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:o.doc.id},{$set:{name:o.doc.name}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.updateTitle=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:o.doc.id},{$set:{title:o.doc.title}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{title:o.doc.title}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.updateText=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:o.doc.id},{$set:{text:o.doc.text}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{text:o.doc.text}},{multi:false},cb
+  tryrun.run o.query,o,cb
+
+note.getText=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find {type:"note",id:JSON.parse(o.doc.id),enabled:true},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:o.doc.id},{$set:{enabled:false}},{multi:false},(err,numAffected)->
-      cb err,numAffected
+    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
@@ -357,7 +365,7 @@ routeHandler=(app,db)->
       res.send 200,r
   
   app.post "/note",(req,res)->
-    note.create {db:db,doc:req.body},(req,res)->
+    note.create {db:db,doc:req.body},(e,r)->
       note.list {db:db,doc:req.body},(e,r)->
         res.send 200,r
   
@@ -365,6 +373,10 @@ routeHandler=(app,db)->
     note.updateTitle {db:db,doc:req.body},(e,r)->
       note.list {db:db,doc:req.body},(e,r)->
         res.send 200,r
+
+  app.get "/note/text",(req,res)->
+    note.getText {db:db,doc:req.query},(e,r)->
+      res.send 200,r
 
   app.put "/note/text",(req,res)->
     note.updateText {db:db,doc:req.body},(e,r)->

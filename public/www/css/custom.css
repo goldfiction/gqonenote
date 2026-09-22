@@ -12,7 +12,8 @@
 }
 
 .well{
-    background-color: #EEE;
+    background-color:#FFF;
+    opacity: 80%;
 }
 
 .selector{
@@ -29,11 +30,15 @@
     display:none;
 }
 
+.fade{
+    z-index:-1;
+}
+
 .wide{
     width:100%;
 }
 
-.col-md-1{
+.border{
     border:1px solid #AAA;
 }
 
@@ -48,4 +53,31 @@
     left:100px;
     padding:10px;
     background-color: #AAA;
+}
+
+
+#editor{
+    opacity:0.95;
+}
+
+body {
+  /* Remove default browser padding and margins */
+  margin: 0;
+  padding: 0;
+
+  /* Force the body to span the full viewport width and height */
+  width: 100vw;
+  height: 100vh;
+
+  /* CHOOSE ONE OPTION BELOW: */
+
+  /* Option A: For a Solid Background Color */
+  background-color: #3498db; 
+
+  /* Option B: For a Full-Screen Background Image */
+  background-image: url('/images/goku.jpg');
+  background-size: cover;       /* Scales the image without stretching it */
+  background-position: center;   /* Keeps the image centered */
+  background-repeat: no-repeat;  /* Prevents the image from tiling */
+  background-attachment: fixed;  /* Keeps the background locked during scroll */
 }
