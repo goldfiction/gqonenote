@@ -23,12 +23,75 @@ inputBox.show = function () {
     $("#popupInputBox").removeClass("fade")
 }
 
+project.size = function () {
+    $.ajax({
+        url: '/size',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:', response);
+            alert("db size: "+response+" bytes")
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    });
+}
+
+project.getSelectID = function (cb) {
+    $.ajax({
+        url: '/select',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            l('get select id successful:', response);
+            cb(null,response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    });    
+}
+
+project.setSelectID = function (doc) {
+    l(doc)
+    $.ajax({
+        url: '/select',
+        type: 'PUT',
+        data: doc,
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:', response);
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });    
+}
+
 project.updateList=function(projects){
     $("#projects").empty()
+    projects.sort((a, b) => a.name.localeCompare(b.name));
     projects.forEach(element => {
         $("#projects").append(new Option(element.name, element.id));
     });
-    project.selected=JSON.parse($("#projects").val())
+    project.selected = JSON.parse($("#projects").val())
+    project.getSelectID(function (e,response) {
+        l(response)
+            try {
+                event = new Event('change', { bubbles: true });
+                selectEl = document.getElementById('projects');
+                $("#projects").val(JSON.parse(response.projectID));
+                selectEl.dispatchEvent(event);
+            } catch (e) {
+                l(e)
+            }
+
+    })
 }
 
 project.list=function(){
@@ -103,9 +166,15 @@ project.rename=function(id,name,cb){
 
 section.updateList=function(sections){
     $("#sections").html("")
+    sections.sort((a, b) => a.name.localeCompare(b.name));
     sections.forEach(element => {
         $("#sections").append("<div class=\"selector section\" value=\""+element.id+"\">"+element.name+"</div>");
     });
+    project.getSelectID(function (e,response) {
+        try {
+            $(".section[value='" + JSON.parse(response.sectionID) + "']").trigger("click");                            
+        } catch (e) { }
+    })
     $(".section").on("click",function(elem){
         try {
             $('.section[value="'+section.selected+'"]').removeClass("selected")            
@@ -113,6 +182,7 @@ section.updateList=function(sections){
         section.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
         l("selected section: " + section.selected)
+        project.setSelectID({sectionID:section.selected})
         page.list()
     })
 }
@@ -188,9 +258,15 @@ section.rename=function(id,name,cb){
 
 page.updateList=function(pages){
     $("#pages").html("")
+    pages.sort((a, b) => a.name.localeCompare(b.name));
     pages.forEach(element => {
         $("#pages").append("<div class=\"selector page\" value=\""+element.id+"\">"+element.name+"</div>");
     });
+    project.getSelectID(function (e,response) {
+        try {
+            $(".page[value='" + JSON.parse(response.pageID) + "']").trigger("click");
+         } catch (e){ }
+    })
     $(".page").on("click",function(elem){
         try {
             $('.page[value="'+page.selected+'"]').removeClass("selected")            
@@ -198,6 +274,7 @@ page.updateList=function(pages){
         page.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
         l("selected page: " + page.selected)
+        project.setSelectID({pageID:page.selected})
         note.list()
     })
 }
@@ -277,7 +354,9 @@ note.getText=function(){
             l('successful:', response);
             if (response.length == 1) {
                 try {
-                    editor.setValue(atob(response[0].text))                    
+                    $("#HTMLContent").html(atob(response[0].text))
+                    editor.setValue(atob(response[0].text))
+                    editor.renderer.updateFull();
                 } catch (e) {
                     editor.setValue("")
                 }
@@ -291,9 +370,15 @@ note.getText=function(){
 
 note.updateList=function(notes){
     $("#notes").html("")
+    notes.sort((a, b) => a.name.localeCompare(b.name));
     notes.forEach(element => {
         $("#notes").append("<div class=\"selector note\" value=\""+element.id+"\">"+element.name+"</div>");
     });
+    project.getSelectID(function (e,response) {
+        try {
+            $(".note[value='" + JSON.parse(response.noteID) + "']").trigger("click");
+        } catch (e) { }
+    })
     $(".note").on("click",function(elem){
         try {
             $('.note[value="'+note.selected+'"]').removeClass("selected")            
@@ -301,7 +386,9 @@ note.updateList=function(notes){
         note.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
         l("selected note: " + note.selected)
+        project.setSelectID({noteID:note.selected})
         note.getText()
+        note.path()
         //editor.setValue(notes.filter((elem) => {return elem.id==JSON.parse(note.selected)}).text||"")
     })
 }
@@ -417,14 +504,42 @@ note.text=function(){
     });
 }
 
+note.path = function () {
+    $.ajax({
+        url: '/note/path',
+        type: 'GET',
+        data: { project: project.selected, section: section.selected, page: page.selected, id: note.selected },
+        dataType: 'text', 
+        success: function(response) {
+            l('successful:', response);
+            //alert("db size: "+response+" bytes")
+            $("#notePath").html("xpath: "+response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            //cb(error)
+        }
+    });
+}
+
 //--
 inputStatus = null;
 
 initOnEvent=function(){
     $('#projects').on('change', function () {
-        project.selected=JSON.parse($("#projects").val())
+        project.selected = JSON.parse($("#projects").val())
+        project.setSelectID({projectID:project.selected})
+
         section.list()
     });
+
+    $("#saveNoteNav").on("click", function (elem) {
+        note.text()
+    })
+
+    $("#dbSize").on("click", function (elem) {
+        project.size()
+    })
 
     $(".btn").on("click", function (elem) {
         l(elem)

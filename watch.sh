@@ -1,2 +1,2 @@
-npm run-script test:watch
+npm run-script run:watch
 

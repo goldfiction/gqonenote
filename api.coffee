@@ -8,6 +8,14 @@
 #   "pageID":0
 #   "noteID":0
 # }
+# select
+# {
+#   "type":"select"
+#   "projectID":0
+#   "sectionID":0
+#   "pageID":0
+#   "noteID":0
+# }
 # project
 # {
 #     "name":"project",
@@ -41,12 +49,20 @@
 
 tryrun=require "gqtryrun"
 l=console.log
+fs=require "fs"
 
 #---
 
 mod={}
 mod.indexTemp=
   "type":"index"
+  "projectID":0
+  "sectionID":0
+  "pageID":0
+  "noteID":0
+
+mod.selectTemp=
+  "type":"select"
   "projectID":0
   "sectionID":0
   "pageID":0
@@ -65,6 +81,21 @@ mod.getID=(o,cb)->
 
 mod.updateID=(o,cb)->
   o.db.update {type:'index'},{$set:o.doc},{multi:false},cb
+
+mod.getSelectID=(o,cb)->
+  o.db.find
+    "type":"select"
+  ,(e,r)->
+    if r.length==1
+      cb e,r[0]
+    else
+      o.doc=mod.selectTemp
+      o.db.insert o.doc,(e,r)->
+        cb e,r
+
+mod.updateSelectID=(o,cb)->
+  #l o
+  o.db.update {type:'select'},{$set:o.doc},{multi:false},cb
 
 #---
 
@@ -168,7 +199,7 @@ section.rename=(o,cb)->
 
 section.remove=(o,cb)->
   o.query=(o,cb)->
-    l o
+    #l o
     o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
@@ -198,7 +229,7 @@ page.create=(o,cb)->
 
 page.list=(o,cb)->
   o.query=(o,cb)->
-    l o
+    #l o
     o.db.find
       "type":"page"
       "project":JSON.parse(o.doc.project)
@@ -254,9 +285,21 @@ note.create=(o,cb)->
           cb e||e2,r
   tryrun.run o.query,o,cb
 
+note.path=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find {type:"note",id:JSON.parse(o.doc.id),enabled:true},{multi:false},(e1,noteDoc)->
+      noteDoc=noteDoc[0]
+      o.db.find {type:"project",id:JSON.parse(noteDoc.project),enabled:true},{multi:false},(e2,projectDoc)->
+        o.db.find {type:"section",id:JSON.parse(noteDoc.section),enabled:true},{multi:false},(e3,sectionDoc)->
+          o.db.find {type:"page",id:JSON.parse(noteDoc.page),enabled:true},{multi:false},(e4,pageDoc)->
+            xpath=projectDoc[0].name+"\\\\"+sectionDoc[0].name+"\\\\"+pageDoc[0].name+"\\\\"+noteDoc.name
+            cb e1||e2||e3||e4,xpath
+      
+  tryrun.run o.query,o,cb
+
 note.list=(o,cb)->
   o.query=(o,cb)->
-    l o
+    #l o
     o.db.find
       "type":"note"
       "project":JSON.parse(o.doc.project)
@@ -296,6 +339,10 @@ note.remove=(o,cb)->
 #---
 
 routeHandler=(app,db)->
+  app.get "/size",(req,res)->
+    stats = fs.statSync('/root/db')
+    res.send 200,stats.size
+
   app.get "/project",(req,res)->
     project.list {db:db},(e,r)->
       res.send 200,r
@@ -318,7 +365,7 @@ routeHandler=(app,db)->
   #--
   
   app.get "/section",(req,res)->
-    l req.query
+    #l req.query
     section.list {db:db,doc:req.query},(e,r)->
       res.send 200,r
   
@@ -378,6 +425,10 @@ routeHandler=(app,db)->
     note.getText {db:db,doc:req.query},(e,r)->
       res.send 200,r
 
+  app.get "/note/path",(req,res)->
+    note.path {db:db,doc:req.query},(e,r)->
+      res.send 200,r
+
   app.put "/note/text",(req,res)->
     note.updateText {db:db,doc:req.body},(e,r)->
       note.list {db:db,doc:req.body},(e,r)->
@@ -392,6 +443,14 @@ routeHandler=(app,db)->
     note.remove {db:db,doc:req.body},(e,r)->
       note.list {db:db,doc:req.body},(e,r)->
         res.send 200,r
+
+  app.get "/select",(req,res)->
+    mod.getSelectID {db:db},(e,r)->
+      res.send 200,r 
+
+  app.put "/select",(req,res)->
+    mod.updateSelectID {db:db,doc:req.body},(e,r)->
+      res.send 200,r 
 
   return app
 

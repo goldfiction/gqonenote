@@ -3,6 +3,10 @@ log=console.log
 Datastore=require 'nedb'
 api=require "./api.coffee"
 
+fs=require "fs"
+ini=require "ini"
+config=ini.parse(fs.readFileSync("./config.ini").toString())
+
 console.log "loading db..."
 db = new Datastore({ filename: '/root/db', autoload: true })
 console.log "db loaded..."
@@ -15,9 +19,9 @@ gqexpress.startServer  # invoke start server like this
       users: 
         admin:"password" 
     server: 
-      port:13000 
-      sslport:13443 
-      domain:"0.0.0.0" 
+      port:config.port||3000 
+      sslport:config.sslport||3443 
+      domain:config.domain||"0.0.0.0" 
       forceSecure:false 
     general: 
       jadepath:process.cwd()+"/views" 

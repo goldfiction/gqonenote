@@ -38,7 +38,23 @@ block content
                         button#duplicateNote.btn.btn-secondary(type="button") [Duplicate]
                     div.inblock.wide#notes
             .col-xs-12.col-md-10
-                #editor
+                ul.nav.nav-tabs#tabContent
+                    li.nav-item
+                        a(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="true") HTML
+                    li.nav-item
+                        a(href="#editorPage",data-bs-toggle="tab",data-bs-target="#editorPage",aria-controls="editorPage",aria-selected="false") Editor
+                    li.nav-item
+                        a#saveNoteNav(href="#") Save
+                    li.nav-item
+                        a#dbSize(href="#") Size 
+                    li.nav-item
+                        a#notePath(href="#") 
+                .tab-content
+                    .tab-pane#HTMLPage
+                        #HTMLContent
+                    .tab-pane.active#editorPage
+                        #editor
+
     #popupInputBox.popup.fade
         input#popupInput(type="text",placeholder="Type something...")
         button#submitBtn.btn.btn-primary OK
