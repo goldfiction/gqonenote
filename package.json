@@ -14,7 +14,8 @@
     "nedb":"1.8.0",
     "gqexpress":"1.0.4",
     "gqtryrun":"0.0.7",
-    "ini":"5.0.0"
+    "ini":"5.0.0",
+    "typescript":"4.3.5"
   },
   "devDependencies": {
     "gqtest": ">=0.0.21",

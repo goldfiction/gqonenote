@@ -6,7 +6,7 @@ html
         // https://cdnjs.com/libraries/bootstrap
         link(rel='stylesheet', href='/css/jquery-ui.css')
         link(rel='stylesheet', href='/css/bootstrap.css')
-        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css')
+        //link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css')
         
         //link(rel='stylesheet', href='/css/reboot.css')
         link(rel='stylesheet', href='/css/aceditor.css')
@@ -17,8 +17,11 @@ html
         //script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.3/angular.min.js")
         //script(src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js")
         script(src="/js/bootstrap.js")
-        script(src="/ace/src-min/ace.js")
-        script(src="/js/ace-toolbar.js")
-        script(src="/js/custom.js")
     body.whole
         block content
+        script(src="/ace/src-min/ace.js")
+        script(src="/ace/src-min/ext-language_tools.js")
+        script(src="https://unpkg.com/ace-linters@latest/build/ace-linters.js")
+        script(src="/js/aceeditor.js")
+        script(src="/js/ace-toolbar.js")
+        script(src="/js/custom.js")

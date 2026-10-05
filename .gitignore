@@ -22,6 +22,7 @@ dist
 
 db/
 sessions/
+user.js
 
 # Generated with release scripts
 index.d.ts

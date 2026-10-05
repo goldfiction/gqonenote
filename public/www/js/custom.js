@@ -23,6 +23,72 @@ inputBox.show = function () {
     $("#popupInputBox").removeClass("fade")
 }
 
+function maxEditor() { 
+    $('#editor').addClass("ace_fullscreen")
+}
+
+function resetEditor() {
+    try {
+        $("#editor").removeClass("ace_fullscreen");
+    } catch (e) { }
+}
+
+function toggleFullScreen() {
+    if ($("#editor").hasClass("ace_fullscreen")) {
+        resetEditor()
+    } else { 
+        maxEditor()
+    }
+}
+
+function showalert(text){
+    $("#alertpopout").text(text)
+    $("#alertpopout").fadeIn()
+    setTimeout(function(){
+        $("#alertpopout").fadeOut()
+    },15000)
+}
+
+function attachControlKey(id="") {
+    //chromeErrorHandler2()
+    var editor = ace.edit("editor" + id);
+    var currentFontSize = editor.getFontSize()
+    $("#editor" + id).keydown(function (event) {
+        // Check if Ctrl key is pressed and the key is 'c' or 'C'
+        if (event.ctrlKey && (event.key === '=' || event.key === '+')) {
+            event.preventDefault(); // Prevent the default copy action if needed
+            console.log("Ctrl++ was pressed!");
+            currentFontSize++
+            editor.setOptions({
+                fontSize: currentFontSize + "px"
+            });
+        } else if (event.ctrlKey && (event.key === '-' || event.key === '_')) {
+            event.preventDefault(); // Prevent the default copy action if needed
+            console.log("Ctrl+- was pressed!");
+            currentFontSize--
+            editor.setOptions({
+                fontSize: currentFontSize + "px"
+            });
+        } else if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
+            event.preventDefault(); // Prevent the default copy action if needed
+            console.log("Ctrl+s was pressed!");
+            note.text()
+            //saveFile(id)
+        } else if (event.ctrlKey && (event.key === 'r' || event.key === 'R')) {
+            event.preventDefault();
+            console.log("Ctrl+r was pressed!");
+            console.log("id is: "+id)
+            //resetEditorPosition(id)
+        } else if (event.altKey && event.key === "Enter") {
+            event.preventDefault();
+            console.log("Alt+Enter was pressed!");
+            console.log("id is: " + id)
+            toggleFullScreen(id)
+        } else if (event.ctrlKey) { 
+        }
+    });
+}
+
 project.size = function () {
     $.ajax({
         url: '/size',
@@ -30,7 +96,7 @@ project.size = function () {
         data: {},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             alert("db size: "+response+" bytes")
         },
         error: function(xhr, status, error) {
@@ -47,7 +113,7 @@ project.getSelectID = function (cb) {
         data: {},
         dataType: 'json', 
         success: function(response) {
-            l('get select id successful:', response);
+            //l('get select id successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -58,19 +124,63 @@ project.getSelectID = function (cb) {
 }
 
 project.setSelectID = function (doc) {
-    l(doc)
+    //l(doc)
     $.ajax({
         url: '/select',
         type: 'PUT',
         data: doc,
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
         }
     });    
+}
+
+selectTheme = function (theme="monokai") {
+    editor.setTheme("ace/theme/" + theme);
+    editor.getSession().setMode("ace/mode/javascript")
+    project.setSelectID({theme:theme})
+}
+
+project.appendTheme = function (themes) {
+    themes.sort((a, b) => a.localeCompare(b));
+    themes.forEach(element => {
+        element=element.replace(".css", "")
+        $("#themes").append(new Option(element, element));
+    });
+    $("#themes").on("change", function (event) {
+        project.selectedTheme = $("#themes").val()
+        selectTheme(project.selectedTheme)
+    })
+    project.getSelectID(function (e,response) {
+        try {
+            project.selectedTheme=response.theme
+            $("#themes").val(project.selectedTheme).change()
+        } catch (e) {
+            l(e)
+        }
+    })
+ }
+
+project.listTheme = function (editor) {
+    $("#themes").empty()
+    $.ajax({
+        url: '/theme',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            //l('successful:', response);
+            project.appendTheme(response);
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });    
+    
 }
 
 project.updateList=function(projects){
@@ -79,9 +189,10 @@ project.updateList=function(projects){
     projects.forEach(element => {
         $("#projects").append(new Option(element.name, element.id));
     });
+    $("#projects").append(new Option("package.json", "package.json"));
     project.selected = JSON.parse($("#projects").val())
     project.getSelectID(function (e,response) {
-        l(response)
+        //l(response)
             try {
                 event = new Event('change', { bubbles: true });
                 selectEl = document.getElementById('projects');
@@ -101,7 +212,7 @@ project.list=function(){
         data: {},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             project.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -117,7 +228,7 @@ project.create=function(name,cb){
         data: {name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             project.updateList(response);
             cb(null,response)
         },
@@ -135,7 +246,7 @@ project.remove=function(id,cb){
         data: {id: id },
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -152,7 +263,7 @@ project.rename=function(id,name,cb){
         data: {id:id,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -181,7 +292,7 @@ section.updateList=function(sections){
         } catch (e) { }
         section.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
-        l("selected section: " + section.selected)
+        //l("selected section: " + section.selected)
         project.setSelectID({sectionID:section.selected})
         page.list()
     })
@@ -194,7 +305,7 @@ section.list=function(){
         data: {project:project.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             section.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -210,7 +321,7 @@ section.create=function(name,cb){
         data: {project:project.selected,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -227,7 +338,7 @@ section.remove=function(id,cb){
         data: {id:id,project:project.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -244,7 +355,7 @@ section.rename=function(id,name,cb){
         data: {id:id,project:project.selected,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             cb(null,response)
         },
         error: function(xhr, status, error) {
@@ -273,7 +384,7 @@ page.updateList=function(pages){
         } catch (e) { }
         page.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
-        l("selected page: " + page.selected)
+        //l("selected page: " + page.selected)
         project.setSelectID({pageID:page.selected})
         note.list()
     })
@@ -286,7 +397,7 @@ page.list=function(){
         data: {project:project.selected,section:section.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             page.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -302,7 +413,7 @@ page.create=function(name){
         data: {project:project.selected,section:section.selected,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             page.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -318,7 +429,7 @@ page.remove=function(id){
         data: {project:project.selected,section:section.selected,id:id},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             page.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -334,7 +445,7 @@ page.rename=function(id,name){
         data: {project:project.selected,section:section.selected,id:id,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             page.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -351,7 +462,7 @@ note.getText=function(){
         data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             if (response.length == 1) {
                 try {
                     $("#HTMLContent").html(atob(response[0].text))
@@ -385,7 +496,7 @@ note.updateList=function(notes){
         } catch (e) { }
         note.selected = elem.target.attributes.value.nodeValue
         $(this).addClass("selected")
-        l("selected note: " + note.selected)
+        //l("selected note: " + note.selected)
         project.setSelectID({noteID:note.selected})
         note.getText()
         note.path()
@@ -400,7 +511,7 @@ note.list=function(){
         data: {project:project.selected,section:section.selected,page:page.selected},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -416,7 +527,7 @@ note.create=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -432,7 +543,7 @@ note.saveas=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:name,text:btoa(editor.getValue())},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -448,7 +559,7 @@ note.duplicate=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:"copy of "+name,text:btoa(editor.getValue())},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -464,7 +575,7 @@ note.remove=function(id){
         data: {project:project.selected,section:section.selected,page:page.selected,id:id},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -480,7 +591,7 @@ note.rename=function(id,name){
         data: {project:project.selected,section:section.selected,page:page.selected,id:id,name:name},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
             note.updateList(response)
         },
         error: function(xhr, status, error) {
@@ -496,7 +607,8 @@ note.text=function(){
         data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(editor.getValue())},
         dataType: 'json', 
         success: function(response) {
-            l('successful:',response);
+            //l('successful:',response);
+            showalert("Note saved.")
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -511,7 +623,7 @@ note.path = function () {
         data: { project: project.selected, section: section.selected, page: page.selected, id: note.selected },
         dataType: 'text', 
         success: function(response) {
-            l('successful:', response);
+            //l('successful:', response);
             //alert("db size: "+response+" bytes")
             $("#notePath").html("xpath: "+response)
         },
@@ -542,7 +654,7 @@ initOnEvent=function(){
     })
 
     $(".btn").on("click", function (elem) {
-        l(elem)
+        //l(elem)
         if (elem.target.id == "addProject") {
             //l("addProject!")
             inputStatus="addProject"
@@ -714,7 +826,9 @@ initOnEvent=function(){
 }
 //--
 
-$(document).ready(function() {
+$(document).ready(function () {
     initOnEvent()
     project.list()
+    project.listTheme()
+    attachControlKey("")
 });

@@ -81,3 +81,39 @@ body {
   background-repeat: no-repeat;  /* Prevents the image from tiling */
   background-attachment: fixed;  /* Keeps the background locked during scroll */
 }
+
+.ace_fullscreen {
+    position: fixed;
+    /* Use fixed positioning to cover the whole screen */
+    top: 0!important;
+    bottom: 0!important;
+    left: 0!important;
+    right: 0!important;
+    height: 100vh!important;
+    /* Ensure full height of the viewport */
+    width: 100vw!important;
+    /* Ensure full width of the viewport */
+    opacity:1.0;
+    z-index: 10000;
+    /* Ensure it's on top of other content */
+}
+
+.posabs{
+    position:absolute!important;
+}
+
+.alert{
+    display:none;
+    width:400px;
+    right:20px;
+    bottom:20px;
+    font-size:10px;
+    /*word-break: break-all;
+    overflow-wrap: break-word;*/
+}
+
+body,
+div,
+canvas {
+    cursor: url("/images/cursor32.png"), auto;
+}

@@ -50,6 +50,7 @@
 tryrun=require "gqtryrun"
 l=console.log
 fs=require "fs"
+path=require "path"
 
 #---
 
@@ -97,6 +98,17 @@ mod.updateSelectID=(o,cb)->
   #l o
   o.db.update {type:'select'},{$set:o.doc},{multi:false},cb
 
+mod.getTheme=(o,cb)->
+  folderPath="./public/www/ace/css/theme"
+  try
+    files = fs.readdirSync folderPath
+    cssFiles = files.filter (file)->
+      path.extname(file)=='.css'
+    l 'CSS Files:',cssFiles
+    cb null,cssFiles
+  catch e
+    console.error('Error reading folder:',e)
+    cb e
 #---
 
 project={}
@@ -342,6 +354,10 @@ routeHandler=(app,db)->
   app.get "/size",(req,res)->
     stats = fs.statSync('/root/db')
     res.send 200,stats.size
+
+  app.get "/theme",(req,res)->
+    mod.getTheme {db:db},(e,r)->
+      res.send 200,r
 
   app.get "/project",(req,res)->
     project.list {db:db},(e,r)->
