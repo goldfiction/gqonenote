@@ -47,10 +47,15 @@
 #     "enabled":true
 # }
 
+ver=1.2
+
 tryrun=require "gqtryrun"
 l=console.log
 fs=require "fs"
 path=require "path"
+exec=require("child_process").execSync
+vm=require "vm"
+async=require "async"
 
 #---
 
@@ -109,6 +114,73 @@ mod.getTheme=(o,cb)->
   catch e
     console.error('Error reading folder:',e)
     cb e
+
+mod.runSH=(o,cb)->
+  l o
+  l "trying to execute sh script\n",o.script
+  fs.writeFileSync("./runscript",o.script)
+  if o.shell=="/bin/sh"
+    exec "npm run-script runscript",(error, stdout, stderr)->
+      if error
+        l "Execution error:",error
+      if stderr
+        l "Shell stderr:",stderr
+      l "Output:\n",stdout
+  else if o.shell=="/bin/bash"
+    exec "npm run-script runbashscript",(error, stdout, stderr)->
+      if error
+        l "Execution error:",error
+      if stderr
+        l "Shell stderr:",stderr
+      l "Output:\n",stdout
+  cb null,"OK"
+
+mod.runBASH=(o,cb)->
+  l "trying to execute bash script\n",o.script
+  fs.writeFileSync("./runscript",o.script)
+  exec "npm run-script runbashscript",(error, stdout, stderr)->
+    if error
+      l "Execution error:",error
+    if stderr
+      l "Shell stderr:",stderr
+    l "Output:\n",stdout
+  cb null,"OK"
+
+mod.getXpathNote=(o,cb)->
+  result=null
+  note.listAll {db:o.db},(e,notes)->
+    #l notes
+    async.eachSeries notes,(noteData,cb)->
+      if !result
+        #l "processing note: ",noteData
+        note.path {db:o.db,doc:noteData},(e,noteXpath)->
+          #l noteXpath
+          if noteXpath&&noteXpath.indexOf(o.xpath)!=-1
+            result=noteData
+          cb()
+      else
+        cb()
+    ,(e,r)->
+      l "finding: ",o.xpath
+      l "result: ",result
+      cb(null,result)
+
+mod.runxpath=(o,cb)->
+  mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
+    if noteData
+      note.getText {db:o.db,doc:noteData},(e,noteData2)->
+        l noteData2[0]        
+        mod.runOneScript {db:o.db,code:atob(noteData2[0].text)},cb
+    else
+      l "no note found"
+      cb()
+
+mod.runOneScript=(o,cb)->
+  contextObject={o:o,db:o.db,eval:eval,require:require,console:console,exec:exec,fs:fs,global:global,xpath:mod.getXpathNote}
+  result=vm.runInNewContext o.code,contextObject
+  l result
+  cb null,result
+
 #---
 
 project={}
@@ -162,6 +234,55 @@ project.list=(o,cb)->
     ,cb
   tryrun.run o.query,o,cb
 
+project.export=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find
+      type:"project"
+      enabled:true
+    ,(e1,projectData)->
+      o.db.find
+        type:"section"
+        enabled:true
+      ,(e2,sectionData)->
+        o.db.find
+          type:"page"
+          enabled:true
+        ,(e3,pageData)->
+          o.db.find
+            type:"note"
+            enabled:true
+          ,(e4,noteData)->
+            total=[]
+            total=total.concat(projectData,sectionData,pageData,noteData)
+            cb(e1||e2||e3||e4,total)
+  tryrun.run o.query,o,cb
+
+project.importData=(data,cb)->
+  o={}
+  o.doc=data
+  o.db.insert o.doc,cb
+
+project.import=(o,cb)->
+  o.query=(o,cb)->
+    data=JSON.parse(fs.readFileSync("./import.json").toString())
+    projectData=data.filter(item => item.type == 'project')
+    sectionData=data.filter(item => item.type == 'section')
+    pageData=data.filter(item => item.type == 'page')
+    noteData=data.filter(item => item.type == 'note')
+    projectData.forEach (data)->
+      project.importData data,(e,r)->
+      l "project imported"
+    sectionData.forEach (data)->
+      project.importData data,(e,r)->
+      l "section imported"
+    pageData.forEach (data)->
+      project.importData data,(e,r)->
+      l "page imported"
+    noteData.forEach (data)->
+      project.importData data,(e,r)->
+      l "note imported"
+  tryrun.run o.query,o,cb
+
 project.rename=(o,cb)->
   o.query=(o,cb)->
     o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
@@ -170,6 +291,26 @@ project.rename=(o,cb)->
 project.remove=(o,cb)->
   o.query=(o,cb)->
     o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
+  tryrun.run o.query,o,cb
+
+project.readPackage=(o,cb)->
+  o.query=(o,cb)->
+    try
+      packageJSON=fs.readFileSync("./package.json").toString()
+      cb(null,packageJSON)
+    catch e
+      cb e
+  tryrun.run o.query,o,cb
+
+project.writePackage=(o,cb)->
+  o.query=(o,cb)->
+    try
+      packageJSON=o.doc.text
+      if packageJSON
+        fs.writeFileSync("./package.json",packageJSON)
+        cb(null,"OK")
+    catch e
+      cb e
   tryrun.run o.query,o,cb
 
 #---
@@ -323,6 +464,17 @@ note.list=(o,cb)->
       cb e,r
   tryrun.run o.query,o,cb
 
+note.listAll=(o,cb)->
+  o.query=(o,cb)->
+    #l o
+    o.db.find
+      "type":"note"
+      "enabled":true
+    ,(e,r)->
+      r = r.map(({ text, ...rest }) => rest)
+      cb e,r
+  tryrun.run o.query,o,cb
+
 note.rename=(o,cb)->
   o.query=(o,cb)->
     o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
@@ -359,10 +511,31 @@ routeHandler=(app,db)->
     mod.getTheme {db:db},(e,r)->
       res.send 200,r
 
+  app.post "/runsh",(req,res)->
+    mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||"/bin/sh"),cwd:(req.body.cwd||"./")},(e,r)->
+      if e
+        res.send 404,e.message
+      else
+        res.send 200,r
+
   app.get "/project",(req,res)->
     project.list {db:db},(e,r)->
       res.send 200,r
-  
+
+  app.get "/project/export",(req,res)->
+    project.export {db:db},(e,r)->
+      data=JSON.stringify(r,null,2)
+      fs.writeFileSync "./export.json",data
+      l "project exported to ./export.json"
+      if e
+        res.send 404,"Failed to import"
+      else
+        res.send 200,"OK"
+
+  app.get "/project/import",(req,res)->
+    project.import {db:db},(e,r)->
+      cb e,{status:"OK"}
+
   app.post "/project",(req,res)->
     project.create {db:db,doc:req.body},(e,r)->
       project.list {db:db},(e,r)->
@@ -378,6 +551,13 @@ routeHandler=(app,db)->
       project.list {db:db},(e,r)->
         res.send 200,r
   
+  app.get "/package",(req,res)->
+    project.readPackage {db:db},(e,r)->
+      res.send 200,r
+
+  app.put "/package",(req,res)->
+    project.writePackage {db:db,doc:req.body},(e,r)->
+      res.send 200,r
   #--
   
   app.get "/section",(req,res)->
@@ -425,6 +605,10 @@ routeHandler=(app,db)->
 
   app.get "/note",(req,res)->
     note.list {db:db,doc:req.query},(e,r)->
+      res.send 200,r
+
+  app.get "/note/all",(req,res)->
+    note.listAll {db:db,doc:req.query},(e,r)->
       res.send 200,r
   
   app.post "/note",(req,res)->

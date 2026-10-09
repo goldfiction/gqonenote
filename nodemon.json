@@ -8,14 +8,13 @@
     "watch": [
         "test/",
         "*.coffee",
-        "*.js",
-        "*.json"
+        "*.js"
     ],
     "env": {
       "NODE_ENV": "development"
     },
     "ext": "coffee,json",
     "events": {
-        "restart": "echo \"App restarted due to:\n'$FILENAME'\" with title \"nodemon\""
+        "restart": "echo \"App restarted due to: \"$FILENAME\" with title \"nodemon\""
     }
   }

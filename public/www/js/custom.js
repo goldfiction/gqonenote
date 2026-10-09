@@ -49,6 +49,13 @@ function showalert(text){
     },15000)
 }
 
+function cleanID(id) {
+    try {
+        id=JSON.parse(proj)
+    } catch (e) { }
+    return id
+}
+
 function attachControlKey(id="") {
     //chromeErrorHandler2()
     var editor = ace.edit("editor" + id);
@@ -98,6 +105,24 @@ project.size = function () {
         success: function(response) {
             //l('successful:', response);
             alert("db size: "+response+" bytes")
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    });
+}
+
+project.runsh = function (script,shell,cb) {
+    $.ajax({
+        url: '/runsh',
+        type: 'POST',
+        data: {script:script,shell:shell},
+        dataType: 'text', 
+        success: function(response) {
+            l('successful:', response);
+            showalert(response)
+            cb(null,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -190,19 +215,19 @@ project.updateList=function(projects){
         $("#projects").append(new Option(element.name, element.id));
     });
     $("#projects").append(new Option("package.json", "package.json"));
-    project.selected = JSON.parse($("#projects").val())
+
+    project.selected = cleanID($("#projects").val())
     project.getSelectID(function (e,response) {
         //l(response)
-            try {
-                event = new Event('change', { bubbles: true });
-                selectEl = document.getElementById('projects');
-                $("#projects").val(JSON.parse(response.projectID));
-                selectEl.dispatchEvent(event);
-            } catch (e) {
-                l(e)
-            }
-
-    })
+        try {
+            event = new Event('change', { bubbles: true });
+            selectEl = document.getElementById('projects');
+            $("#projects").val(cleanID(response.projectID))                        
+            selectEl.dispatchEvent(event);
+        } catch (e) {
+            l(e)
+        }
+    })        
 }
 
 project.list=function(){
@@ -271,6 +296,82 @@ project.rename=function(id,name,cb){
             cb(error)
         }
     });
+}
+
+project.readPackage = function (cb) {
+    $.ajax({
+        url: '/package',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function(response) {
+            //l('successful:', response);
+            editor.setValue(response)
+            cb(null, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+project.writePackage = function (cb) {
+    $.ajax({
+        url: '/package',
+        type: 'PUT',
+        data: {text:editor.getValue()},
+        dataType: 'text', 
+        success: function(response) {
+            //l('successful:', response);
+            cb(null,response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+project.export = function (cb) {
+    $.ajax({
+        url: '/project/export',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function(response) {
+            //l('successful:', response);
+            //editor.setValue(response)
+            showalert("Project exported.")  
+            cb(null, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+project.import = function (cb) {
+    $.ajax({
+        url: '/project/import',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            //l('successful:', response);
+            //editor.setValue(response)
+            if (response.status == "OK") {
+                showalert("Project imported.")
+                project.list()        
+            }
+            cb(null, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
 }
 
 //--
@@ -520,6 +621,22 @@ note.list=function(){
     });
 }
 
+note.listAll=function(){
+    $.ajax({
+        url: '/note/all',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            l('successful:',response);
+            //note.updateList(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+}
+
 note.create=function(name){
     $.ajax({
         url: '/note',
@@ -600,20 +717,31 @@ note.rename=function(id,name){
     });
 }
 
-note.text=function(){
-    $.ajax({
-        url: '/note/text',
-        type: 'PUT',
-        data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(editor.getValue())},
-        dataType: 'json', 
-        success: function(response) {
-            //l('successful:',response);
-            showalert("Note saved.")
-        },
-        error: function(xhr, status, error) {
-            l('failed:', error);
-        }
-    });
+note.text = function () {
+    if (project.selected == "package.json") {
+        project.writePackage(function (e, r) {
+            if (e) {
+                l('failed:', e);
+            } else {
+                showalert("Note saved.")                
+            }
+        })
+    } else {
+        $.ajax({
+            url: '/note/text',
+            type: 'PUT',
+            data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(editor.getValue())},
+            dataType: 'json', 
+            success: function(response) {
+                //l('successful:',response);
+                showalert("Note saved.")
+            },
+            error: function(xhr, status, error) {
+                l('failed:', error);
+            }
+        });
+        
+    }
 }
 
 note.path = function () {
@@ -635,14 +763,56 @@ note.path = function () {
 }
 
 //--
+
+function runClock() {
+    const timeNow = new Date();
+    let hours = timeNow.getHours();
+    let minutes = timeNow.getMinutes();
+    let seconds = timeNow.getSeconds();
+    let period = "AM";
+
+    // Convert 24-hour format to 12-hour format
+    if (hours >= 12) {
+        period = "PM";
+    }
+    if (hours > 12) {
+        hours = hours - 12;
+    }
+    if (hours === 0) {
+        hours = 12;
+    }
+
+    // Pad single digits with leading zeros
+    hours = hours < 10 ? "0" + hours : hours;
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+
+    // Combine into a readable time string
+    const timeString = `${hours}:${minutes}:${seconds} ${period}`;
+    
+    // Inject the string into our HTML element
+    document.getElementById("clock").textContent = timeString;
+}
+
+initClock = function () {
+    setInterval(runClock, 300);
+}
+
+//--
 inputStatus = null;
 
 initOnEvent=function(){
     $('#projects').on('change', function () {
-        project.selected = JSON.parse($("#projects").val())
-        project.setSelectID({projectID:project.selected})
-
-        section.list()
+        if ($("#projects").val().toLowerCase() == "package.json") {
+            project.selected = $("#projects").val()
+            project.setSelectID({projectID:project.selected})
+            project.readPackage(function (e,r) { })
+        }
+        else {
+            project.selected = JSON.parse($("#projects").val())
+            project.setSelectID({projectID:project.selected})
+            section.list()
+        }
     });
 
     $("#saveNoteNav").on("click", function (elem) {
@@ -671,6 +841,12 @@ initOnEvent=function(){
             inputStatus = "editProject"
             $("#popupInput").val($("#projects option:selected").text())
             $("#popupInputBox").removeClass("fade")
+        }
+        else if (elem.target.id == "export") {
+            project.export(function (e,r) { })
+        }
+        else if (elem.target.id == "import") {
+            project.import(function (e,r) { })
         }
         //--
         else if (elem.target.id == "addSection") {
@@ -743,6 +919,15 @@ initOnEvent=function(){
         else if (elem.target.id == "cancelBtn") {
             $("#popupInputBox").addClass("fade")
             $("#popupInput").val("")
+        }
+        else if (elem.target.id == "run") {
+            script = editor.getValue()
+            if (script.indexOf("#!/bin/sh") != -1) {
+                project.runsh(script,"/bin/sh", function (e,r) { })
+            }
+            else if (script.indexOf("#!/bin/bash") != -1) {
+                project.runsh(script,"/bin/bash", function (e,r) { })
+            }
         }
         else if (elem.target.id == "submitBtn") {
             //--
@@ -831,4 +1016,6 @@ $(document).ready(function () {
     project.list()
     project.listTheme()
     attachControlKey("")
+    //note.listAll()
+    initClock()
 });

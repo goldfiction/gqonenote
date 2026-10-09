@@ -24,7 +24,10 @@
   },
   "scripts": {
     "start": "node --require coffeescript/register index.coffee",
-    "run:watch": "nodemon --delay 6 -q -x \"npm start\"",
+    "execute": "node --require coffeescript/register index.coffee execute testOneScript",
+    "run:watch": "nodemon --delay 3 -q --verbose -x \"npm start\"",
+    "runscript":"sh ./runscript",
+    "runbashscript": "bash ./runscript",
     "test": "node --require coffeescript/register test.coffee",
     "test:watch": "nodemon --delay 6 -q -x \"npm test\"",
     "test:slow": "mocha --openssl-legacy-provider -require coffeescript/register --no-color --reporter min -t 20000 test/test.slow.coffee",
@@ -56,5 +59,6 @@
         }
       }
     ]
-  }
+  },
+  "note":"1234567"
 }

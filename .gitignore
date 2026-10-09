@@ -23,6 +23,8 @@ dist
 db/
 sessions/
 user.js
+export.json
+runscript
 
 # Generated with release scripts
 index.d.ts
