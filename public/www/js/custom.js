@@ -1046,6 +1046,9 @@ initOnEvent=function(){
             else if(script.indexOf("#!javascript")!=-1){
                 project.runsh(script,"javascript", function (e,r) { })
             }
+            else if(script.indexOf("#!coffeescript")!=-1){
+                project.runsh(script,"coffeescript", function (e,r) { })
+            }
         }
         else if (elem.target.id == "stop") {
             project.stop(function (e,r) { })

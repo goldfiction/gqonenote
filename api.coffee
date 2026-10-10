@@ -58,6 +58,7 @@ spawn=require('child_process').spawn
 vm=require "vm"
 async=require "async"
 _=require "lodash"
+CoffeeScript=require "coffeescript"
 
 #---
 
@@ -129,40 +130,67 @@ mod.getLanguage=(o,cb)->
     console.error('Error reading folder:',e)
     cb e
 
-mod.runSH=(o,cb)->
-  #l o
-  if o.shell=="/bin/sh"
-    l "trying to execute sh script\n",o.script
-    fs.writeFileSync("./runscript",o.script)
-    exec "npm run-script runscript",(error, stdout, stderr)->
-      if error
-        l "Execution error:",error
-      if stderr
-        l "Shell stderr:",stderr
-      l "Output:\n",stdout
-  else if o.shell=="/bin/bash"
-    l "trying to execute bash script\n",o.script
-    fs.writeFileSync("./runscript",o.script)
-    exec "npm run-script runbashscript",(error, stdout, stderr)->
-      if error
-        l "Execution error:",error
-      if stderr
-        l "Shell stderr:",stderr
-      l "Output:\n",stdout
-  else if o.shell=="javascript"
-    mod.runOneScript {db:o.db,code:o.script},(e,r)->
-  cb null,"OK"
-
-mod.runBASH=(o,cb)->
-  l "trying to execute bash script\n",o.script
+runSH1=(o,cb)->
+  l "trying to execute sh script\n",o.script
   fs.writeFileSync("./runscript",o.script)
-  exec "npm run-script runbashscript",(error, stdout, stderr)->
+  exec "npm run-script runscript",(error, stdout, stderr)->
     if error
       l "Execution error:",error
     if stderr
       l "Shell stderr:",stderr
     l "Output:\n",stdout
-  cb null,"OK"
+    cb(error,stdout)
+
+runSH1_2=(o,cb)->
+  o.query=(o,cb)->
+    l "trying to execute sh script\n",o.script
+    fs.writeFileSync("./runscript",o.script)
+    child=null
+    if o.shell=="/bin/bash"
+      child = spawn 'bash',["./runscript"],{ shell: true, cwd: "./" }
+    else if o.shell=="/bin/sh"
+      child = spawn 'sh',["./runscript"],{ shell: true , cwd: "./"}
+    child.stdout.on 'data',(data)->
+      l "stdout: ",data.toString()
+    child.stderr.on 'data',(data)->
+      l "stderr: ",data.toString()
+    child.on 'close',(code)->
+      l "Child process exited with code ",code
+      cb child.stderr,child.stdout
+  tryrun.run o.query,o,(e,r)->
+    cb null,"OK"
+
+runSH2=(o,cb)->
+  o.query=(o,cb)->
+    child=null
+    if o.shell=="/bin/bash"
+      child = spawn 'bash',['-c', o.script],{ shell: true, cwd: "./" }
+    else if o.shell=="/bin/sh"
+      child = spawn 'sh',['-c', o.script],{ shell: true , cwd: "./"}
+    child.stdout.on 'data',(data)->
+      l "stdout: ",data.toString()
+    child.stderr.on 'data',(data)->
+      l "stderr: ",data.toString()
+    child.on 'close',(code)->
+      l "Child process exited with code ",code
+      cb child.stderr,child.stdout
+  tryrun.run o.query,o,(e,r)->
+    cb null,"OK"
+
+mod.runSH=(o,cb)->
+  #l o
+  l "running script using shell: "+o.shell
+  l "script: \n",o.script
+  o.query=(o,cb)->
+    if o.shell=="/bin/sh"||o.shell=="/bin/bash"
+      runSH1_2(o,cb)
+    else if o.shell=="javascript"
+      mod.runOneScript {db:o.db,code:o.script},cb
+    else if o.shell=="coffeescript"
+      code = CoffeeScript.compile(o.script, { bare: true })
+      mod.runOneScript {db:o.db,code:code},cb
+  tryrun.run o.query,o,(e,r)->
+    cb null,"OK"
 
 mod.getXpathNote=(o,cb)->
   result=null
