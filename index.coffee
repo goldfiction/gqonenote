@@ -52,7 +52,7 @@ if process.argv[2]=="execute"
   api.mod.runxpath {db:db,xpath:xpath},(e,r)->
     if e
       l e
-    process.exit()
+    #process.exit()
 
 else
   # start gqexpress

@@ -1,5 +1,5 @@
 .ace_editor{
-    height:900px;
+    height:85vh;
 }
 
 .inblock{
@@ -112,8 +112,33 @@ body {
     overflow-wrap: break-word;*/
 }
 
+#motd{
+    width:540px;
+    height:200px;
+    left:20%;
+    top:40%;
+    font-size:8px;
+    font-family: "Courier New", Courier, monospace;
+    opacity:0.8;
+}
+
 body,
 div,
 canvas {
     cursor: url("/images/cursor32.png"), auto;
+}
+
+#clock2{
+  float:right;
+  padding-right:1px;
+}
+
+#cmdline2{
+  float:right;
+  padding-right:300px;
+  width:220px;
+}
+
+#cmdlineInput{
+    width:220px;
 }

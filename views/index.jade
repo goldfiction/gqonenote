@@ -14,6 +14,9 @@ block content
                     div.inblock
                         p.inblock Theme:
                         select(name="theme",id="themes")
+                    div.inblock
+                        p.inblock Language:
+                        select(name="language",id="languages")
         .row
             .col-xs-12.col-md-2
                 .border
@@ -43,9 +46,9 @@ block content
             .col-xs-12.col-md-10
                 ul.nav.nav-tabs#tabContent
                     li.nav-item
-                        a(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="true") HTML
+                        a#HTMLPageNav.btn(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="true") HTML
                     li.nav-item
-                        a(href="#editorPage",data-bs-toggle="tab",data-bs-target="#editorPage",aria-controls="editorPage",aria-selected="false") Editor
+                        a#editorPageNav.btn(href="#editorPage",data-bs-toggle="tab",data-bs-target="#editorPage",aria-controls="editorPage",aria-selected="true") Editor
                     li.nav-item
                         a#saveNoteNav(href="#") Save
                     li.nav-item
@@ -59,16 +62,19 @@ block content
                         a#export.btn(href="#") Export
                     li.nav-item
                         a#import.btn(href="#") Import
+                    li.nav-item
+                        a#stop.btn(href="#") Stop Server
+                    li.nav-item
+                        a#restart.btn(href="#") Restart Server
                 .tab-content
                     .tab-pane#HTMLPage
                         #HTMLContent
                     .tab-pane.active#editorPage
                         #editor
                         #statusBar
-                        #cmdline 
-                        #clock
     #popupInputBox.popup.fade
         input#popupInput(type="text",placeholder="Type something...")
         button#submitBtn.btn.btn-primary OK
         button#cancelBtn.btn.btn-secondary Cancel
-    #alertpopout.alert.alert-success.posabs(role="alert") This is a success alert—check it out!
+    #alertpopout.alert.alert-success.posabs(role="alert")
+    #motd.alert.alert-success.posabs(role="alert")

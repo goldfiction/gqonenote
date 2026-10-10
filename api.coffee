@@ -54,8 +54,10 @@ l=console.log
 fs=require "fs"
 path=require "path"
 exec=require("child_process").execSync
+spawn=require('child_process').spawn
 vm=require "vm"
 async=require "async"
+_=require "lodash"
 
 #---
 
@@ -107,19 +109,31 @@ mod.getTheme=(o,cb)->
   folderPath="./public/www/ace/css/theme"
   try
     files = fs.readdirSync folderPath
-    cssFiles = files.filter (file)->
+    files = files.filter (file)->
       path.extname(file)=='.css'
-    l 'CSS Files:',cssFiles
-    cb null,cssFiles
+    l 'CSS Files:',files
+    cb null,files
+  catch e
+    console.error('Error reading folder:',e)
+    cb e
+
+mod.getLanguage=(o,cb)->
+  folderPath="./public/www/ace/src-min"
+  try
+    files = fs.readdirSync folderPath
+    files = files.filter (file)->
+      path.extname(file)=='.js'&&file.indexOf("mode-")!=-1
+    l 'Language Files:',files
+    cb null,files
   catch e
     console.error('Error reading folder:',e)
     cb e
 
 mod.runSH=(o,cb)->
-  l o
-  l "trying to execute sh script\n",o.script
-  fs.writeFileSync("./runscript",o.script)
+  #l o
   if o.shell=="/bin/sh"
+    l "trying to execute sh script\n",o.script
+    fs.writeFileSync("./runscript",o.script)
     exec "npm run-script runscript",(error, stdout, stderr)->
       if error
         l "Execution error:",error
@@ -127,12 +141,16 @@ mod.runSH=(o,cb)->
         l "Shell stderr:",stderr
       l "Output:\n",stdout
   else if o.shell=="/bin/bash"
+    l "trying to execute bash script\n",o.script
+    fs.writeFileSync("./runscript",o.script)
     exec "npm run-script runbashscript",(error, stdout, stderr)->
       if error
         l "Execution error:",error
       if stderr
         l "Shell stderr:",stderr
       l "Output:\n",stdout
+  else if o.shell=="javascript"
+    mod.runOneScript {db:o.db,code:o.script},(e,r)->
   cb null,"OK"
 
 mod.runBASH=(o,cb)->
@@ -161,26 +179,48 @@ mod.getXpathNote=(o,cb)->
       else
         cb()
     ,(e,r)->
-      l "finding: ",o.xpath
-      l "result: ",result
+      #l "finding: ",o.xpath
+      #l "result: ",result
       cb(null,result)
 
 mod.runxpath=(o,cb)->
   mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
     if noteData
       note.getText {db:o.db,doc:noteData},(e,noteData2)->
-        l noteData2[0]        
+        #l noteData2[0]        
         mod.runOneScript {db:o.db,code:atob(noteData2[0].text)},cb
     else
       l "no note found"
       cb()
 
+mod.getXPathScript=(o,cb)->
+  mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
+    if noteData
+      note.getText {db:o.db,doc:noteData},(e,noteData2)->
+        #l noteData2[0]        
+        cb(e,atob(noteData2[0].text))
+    else
+      l "no note found"
+      cb()
+
 mod.runOneScript=(o,cb)->
-  contextObject={o:o,db:o.db,eval:eval,require:require,console:console,exec:exec,fs:fs,global:global,xpath:mod.getXpathNote}
+  contextObject={o:o,db:o.db,eval:eval,require:require,console:console,exec:exec,fs:fs,global:global,xpath:mod.getXPathScript}
   result=vm.runInNewContext o.code,contextObject
-  l result
+  #l result
   cb null,result
 
+mod.restartServer=()->
+  o={}
+  o.query=()->
+    child=spawn "npm",["start"],
+      detached:true
+      shell:true
+      stdio:'inherit'
+    child.unref()
+    setTimeout ()->
+      process.exit(0)
+    ,2000
+  tryrun.run o.query,o,(e,r)->
 #---
 
 project={}
@@ -510,6 +550,26 @@ routeHandler=(app,db)->
   app.get "/theme",(req,res)->
     mod.getTheme {db:db},(e,r)->
       res.send 200,r
+
+  app.get "/language",(req,res)->
+    mod.getLanguage {db:db},(e,r)->
+      res.send 200,r
+
+  app.get "/motd",(req,res)->
+    motd=fs.readFileSync('./resource/motd').toString()
+    res.send 200,motd
+
+  app.get "/server/stop",(req,res)->
+    res.send 200,"OK"
+    setTimeout ()->
+      process.exit(0)
+    ,500
+
+  app.get "/server/restart",(req,res)->
+    res.send 200,"OK"
+    setTimeout ()->
+      mod.restartServer()
+    ,500
 
   app.post "/runsh",(req,res)->
     mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||"/bin/sh"),cwd:(req.body.cwd||"./")},(e,r)->

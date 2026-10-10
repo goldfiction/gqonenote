@@ -49,6 +49,14 @@ function showalert(text){
     },15000)
 }
 
+function motd(text){
+    $("#motd").html("<pre>"+text+"</pre>")
+    $("#motd").fadeIn()
+    setTimeout(function(){
+        $("#motd").fadeOut()
+    },4000)
+}
+
 function cleanID(id) {
     try {
         id=JSON.parse(proj)
@@ -131,6 +139,24 @@ project.runsh = function (script,shell,cb) {
     });
 }
 
+project.motd = function (cb) {
+    $.ajax({
+        url: '/motd',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function(response) {
+            //l('get select id successful:', response);
+            motd(response)
+            cb(null,response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    });    
+}
+
 project.getSelectID = function (cb) {
     $.ajax({
         url: '/select',
@@ -166,7 +192,6 @@ project.setSelectID = function (doc) {
 
 selectTheme = function (theme="monokai") {
     editor.setTheme("ace/theme/" + theme);
-    editor.getSession().setMode("ace/mode/javascript")
     project.setSelectID({theme:theme})
 }
 
@@ -188,6 +213,33 @@ project.appendTheme = function (themes) {
             l(e)
         }
     })
+}
+
+selectLanguage = function (lang = "javascript") {
+    l("setting to language:",lang)
+    editor.getSession().setMode("ace/mode/"+lang)
+    project.setSelectID({language:lang})
+}
+
+project.appendLanguage = function (langs) {
+    langs.sort((a, b) => a.localeCompare(b));
+    langs.forEach(element => {
+        element = element.replace(".js", "")
+        element=element.replace("mode-", "")
+        $("#languages").append(new Option(element, element));
+    });
+    $("#languages").on("change", function (event) {
+        project.selectedLanguage = $("#languages").val()
+        selectLanguage(project.selectedLanguage)
+    })
+    project.getSelectID(function (e,response) {
+        try {
+            project.selectedLanguage=response.language
+            $("#languages").val(project.selectedLanguage).change()
+        } catch (e) {
+            l(e)
+        }
+    })
  }
 
 project.listTheme = function (editor) {
@@ -200,6 +252,24 @@ project.listTheme = function (editor) {
         success: function(response) {
             //l('successful:', response);
             project.appendTheme(response);
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });    
+    
+}
+
+project.listLanguage = function (editor) {
+    $("#languages").empty()
+    $.ajax({
+        url: '/language',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            //l('successful:', response);
+            project.appendLanguage(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -366,6 +436,40 @@ project.import = function (cb) {
                 project.list()        
             }
             cb(null, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+project.stop = function (cb) {
+    $.ajax({
+        url: '/server/stop',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function(response) {
+            showalert("Server stopped.")
+            cb()
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+project.restart = function (cb) {
+    $.ajax({
+        url: '/server/restart',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function(response) {
+            showalert("Server restarted.")
+            cb()
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -566,9 +670,14 @@ note.getText=function(){
             //l('successful:', response);
             if (response.length == 1) {
                 try {
+                    hideEditor=!($("#editorPage").hasClass("active"))
                     $("#HTMLContent").html(atob(response[0].text))
+                    $("#editorPage").addClass("show")
                     editor.setValue(atob(response[0].text))
                     editor.renderer.updateFull();
+                    if (hideEditor) {
+                        $("#editorPage").removeClass("show")
+                    }
                 } catch (e) {
                     editor.setValue("")
                 }
@@ -586,11 +695,11 @@ note.updateList=function(notes){
     notes.forEach(element => {
         $("#notes").append("<div class=\"selector note\" value=\""+element.id+"\">"+element.name+"</div>");
     });
-    project.getSelectID(function (e,response) {
-        try {
-            $(".note[value='" + JSON.parse(response.noteID) + "']").trigger("click");
-        } catch (e) { }
-    })
+    //project.getSelectID(function (e,response) {
+    //    try {
+    //        $(".note[value='" + JSON.parse(response.noteID) + "']").trigger("click");
+    //    } catch (e) { }
+    //})
     $(".note").on("click",function(elem){
         try {
             $('.note[value="'+note.selected+'"]').removeClass("selected")            
@@ -791,11 +900,17 @@ function runClock() {
     const timeString = `${hours}:${minutes}:${seconds} ${period}`;
     
     // Inject the string into our HTML element
-    document.getElementById("clock").textContent = timeString;
+    document.getElementById("clock2").textContent = timeString;
 }
 
 initClock = function () {
+    $("#statusBar").append("<div id='clock2'></div>")
     setInterval(runClock, 300);
+}
+
+initCmdline = function () {
+    $("#statusBar").append("<div id='cmdline2'></div>")
+    $("#cmdline2").append("<input id='cmdlineInput' type='text'></input>")
 }
 
 //--
@@ -928,6 +1043,19 @@ initOnEvent=function(){
             else if (script.indexOf("#!/bin/bash") != -1) {
                 project.runsh(script,"/bin/bash", function (e,r) { })
             }
+            else if(script.indexOf("#!javascript")!=-1){
+                project.runsh(script,"javascript", function (e,r) { })
+            }
+        }
+        else if (elem.target.id == "stop") {
+            project.stop(function (e,r) { })
+        }
+        else if (elem.target.id == "restart") {
+            project.restart(function (e,r) { })
+        }
+        else if (elem.target.id == "HTMLPageNav") {
+            $("#editorPage").removeClass("active")
+            $("#editorPage").removeClass("show")
         }
         else if (elem.target.id == "submitBtn") {
             //--
@@ -1012,10 +1140,13 @@ initOnEvent=function(){
 //--
 
 $(document).ready(function () {
+    project.motd(function (e,r) { })
     initOnEvent()
     project.list()
     project.listTheme()
+    project.listLanguage()
     attachControlKey("")
     //note.listAll()
     initClock()
+    initCmdline()
 });
