@@ -1,6 +1,5 @@
 gqexpress=require "gqexpress" 
-log=console.log 
-l=console.log
+l=log=console.log 
 Datastore=require 'nedb'
 api=require "./api.coffee"
 
@@ -27,7 +26,6 @@ userjs={}
 try
   userjs=require("./user.js")._from
 catch e
-  log e
 
 # init main config
 mainConfig=
@@ -43,7 +41,7 @@ mainConfig=
   general: 
     jadepath:process.cwd()+"/views" 
     staticpath:process.cwd()+"/public/www/"
-#log mainConfig
+#l mainConfig
 
 l "argv: ",process.argv
 
@@ -52,8 +50,6 @@ if process.argv[2]=="execute"
   api.mod.runxpath {db:db,xpath:xpath},(e,r)->
     if e
       l e
-    #process.exit()
-
 else
   # start gqexpress
   gqexpress.startServer  # invoke start server like this 
@@ -67,4 +63,4 @@ else
           title:"gqonenote"  # meta info passed to jade and render using #{title} 
       return app  # kindly return app back to startServer with app.gets 
   ,(e,o)-> 
-    log "Server started!"  # if you see this, then the server is running correctly.
+    l "Server started!"  # if you see this, then the server is running correctly.

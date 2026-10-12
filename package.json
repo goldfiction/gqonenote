@@ -11,22 +11,22 @@
   "node_version": "18.20.2",
   "license": "MIT",
   "dependencies": {
-    "nedb":"1.8.0",
-    "gqexpress":"1.0.4",
-    "gqtryrun":"0.0.7",
-    "ini":"5.0.0",
-    "typescript":"4.3.5"
+    "gqexpress": "1.0.4",
+    "gqtryrun": "0.0.7",
+    "ini": "5.0.0",
+    "nedb": "1.8.0",
+    "typescript": "4.3.5"
   },
   "devDependencies": {
-    "gqtest": ">=0.0.21",
     "coffeescript": "2.7.0",
+    "gqtest": ">=0.0.21",
     "nodemon": "3.1.10"
   },
   "scripts": {
     "start": "node --require coffeescript/register index.coffee",
     "execute": "node --require coffeescript/register index.coffee execute testOneScript",
     "run:watch": "nodemon --delay 3 -q --verbose -x \"npm start\"",
-    "runscript":"sh ./runscript",
+    "runscript": "sh ./runscript",
     "runbashscript": "bash ./runscript",
     "test": "node --require coffeescript/register test.coffee",
     "test:watch": "nodemon --delay 6 -q -x \"npm test\"",
@@ -60,5 +60,5 @@
       }
     ]
   },
-  "note":"1234567"
+  "note": "1234567"
 }

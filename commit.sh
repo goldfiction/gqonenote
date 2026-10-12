@@ -1,5 +1,6 @@
+#!/bin/bash
 git status
-pause
+IFS= read -r line
 git add .
 git commit -m "update"
 git push nodegit master

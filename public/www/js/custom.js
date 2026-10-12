@@ -42,7 +42,7 @@ function toggleFullScreen() {
 }
 
 function showalert(text){
-    $("#alertpopout").text(text)
+    $("#alertpopout").html("<pre>"+text+"</pre>")
     $("#alertpopout").fadeIn()
     setTimeout(function(){
         $("#alertpopout").fadeOut()
@@ -1048,6 +1048,12 @@ initOnEvent=function(){
             }
             else if(script.indexOf("#!coffeescript")!=-1){
                 project.runsh(script,"coffeescript", function (e,r) { })
+            }
+            else if(script.indexOf("#!python")!=-1){
+                project.runsh(script,"python", function (e,r) { })
+            }
+            else if(script.indexOf("#!lua")!=-1){
+                project.runsh(script,"lua", function (e,r) { })
             }
         }
         else if (elem.target.id == "stop") {

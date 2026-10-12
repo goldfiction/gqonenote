@@ -25,6 +25,8 @@ sessions/
 user.js
 export.json
 runscript
+.vscode/
+*.log*
 
 # Generated with release scripts
 index.d.ts

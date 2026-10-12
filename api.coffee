@@ -59,7 +59,7 @@ vm=require "vm"
 async=require "async"
 _=require "lodash"
 CoffeeScript=require "coffeescript"
-
+#LuaState=require("lua-state").LuaState
 #---
 
 mod={}
@@ -146,51 +146,103 @@ runSH1_2=(o,cb)->
     l "trying to execute sh script\n",o.script
     fs.writeFileSync("./runscript",o.script)
     child=null
+    msg=""
     if o.shell=="/bin/bash"
       child = spawn 'bash',["./runscript"],{ shell: true, cwd: "./" }
     else if o.shell=="/bin/sh"
       child = spawn 'sh',["./runscript"],{ shell: true , cwd: "./"}
     child.stdout.on 'data',(data)->
       l "stdout: ",data.toString()
+      msg+=data.toString()
     child.stderr.on 'data',(data)->
       l "stderr: ",data.toString()
     child.on 'close',(code)->
       l "Child process exited with code ",code
-      cb child.stderr,child.stdout
-  tryrun.run o.query,o,(e,r)->
-    cb null,"OK"
+      cb null,msg
+  tryrun.run o.query,o,cb
+
+runPY=(o,cb)->
+  o.query=(o,cb)->
+    l "trying to execute python script\n",o.script
+    fs.writeFileSync("./runscript",o.script)
+    child=null
+    msg=""
+    child = spawn 'python',["./runscript"],{ shell: true , cwd: "./"}
+    child.stdout.on 'data',(data)->
+      l "stdout: ",data.toString()
+      msg+=data.toString()
+    child.stderr.on 'data',(data)->
+      l "stderr: ",data.toString()
+    child.on 'close',(code)->
+      l "Child process exited with code ",code
+      cb null,msg
+  tryrun.run o.query,o,cb
 
 runSH2=(o,cb)->
   o.query=(o,cb)->
     child=null
+    msg=""
     if o.shell=="/bin/bash"
       child = spawn 'bash',['-c', o.script],{ shell: true, cwd: "./" }
     else if o.shell=="/bin/sh"
       child = spawn 'sh',['-c', o.script],{ shell: true , cwd: "./"}
     child.stdout.on 'data',(data)->
       l "stdout: ",data.toString()
+      msg+=data.toString()
     child.stderr.on 'data',(data)->
       l "stderr: ",data.toString()
     child.on 'close',(code)->
       l "Child process exited with code ",code
-      cb child.stderr,child.stdout
-  tryrun.run o.query,o,(e,r)->
-    cb null,"OK"
+      cb null,msg
+  tryrun.run o.query,o,cb
 
+runLua_1=(o,cb)->
+  o.param=o.param||{}
+  lua = new LuaState()
+  #lua.setGlobal("multiplier", 5)  # set variable values
+  for key, value of o.param
+    lua.setGlobal(key, value)
+  try
+    result = lua.eval o.script
+    l("Result from Lua:", result)
+    cb null,result
+  catch e
+    cb e
+  lua.close()
+
+runLua=(o,cb)->
+  o.query=(o,cb)->
+    l "trying to execute lua script\n",o.script
+    fs.writeFileSync("./runscript",o.script)
+    child=null
+    msg=""
+    child = spawn 'lua',["./runscript"],{ shell: true , cwd: "./"}
+    child.stdout.on 'data',(data)->
+      l "stdout: ",data.toString()
+      msg+=data.toString()
+    child.stderr.on 'data',(data)->
+      l "stderr: ",data.toString()
+    child.on 'close',(code)->
+      l "Child process exited with code ",code
+      cb null,msg
+  tryrun.run o.query,o,cb
 mod.runSH=(o,cb)->
   #l o
   l "running script using shell: "+o.shell
   l "script: \n",o.script
   o.query=(o,cb)->
     if o.shell=="/bin/sh"||o.shell=="/bin/bash"
-      runSH1_2(o,cb)
+      runSH1_2 o,cb
     else if o.shell=="javascript"
       mod.runOneScript {db:o.db,code:o.script},cb
     else if o.shell=="coffeescript"
       code = CoffeeScript.compile(o.script, { bare: true })
       mod.runOneScript {db:o.db,code:code},cb
-  tryrun.run o.query,o,(e,r)->
-    cb null,"OK"
+    else if o.shell=="python"
+      runPY o,cb
+    else if o.shell=="lua"
+      runLua o,cb
+  tryrun.run o.query,o,cb
 
 mod.getXpathNote=(o,cb)->
   result=null
@@ -209,7 +261,7 @@ mod.getXpathNote=(o,cb)->
     ,(e,r)->
       #l "finding: ",o.xpath
       #l "result: ",result
-      cb(null,result)
+      cb null,result
 
 mod.runxpath=(o,cb)->
   mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
@@ -232,11 +284,26 @@ mod.getXPathScript=(o,cb)->
       cb()
 
 mod.runOneScript=(o,cb)->
-  contextObject={o:o,db:o.db,eval:eval,require:require,console:console,exec:exec,fs:fs,global:global,xpath:mod.getXPathScript}
-  result=vm.runInNewContext o.code,contextObject
-  #l result
-  cb null,result
-
+  contextObject=
+    o:o
+    db:o.db
+    eval:eval
+    require:require
+    console:console
+    spawn:spawn
+    exec:exec
+    async:async
+    _:_
+    fs:fs
+    global:global
+    xpath:mod.getXPathScript
+    runSH:mod.runSH
+  try
+    result=vm.runInNewContext o.code,contextObject
+    cb null,result
+  catch e
+    cb e
+  
 mod.restartServer=()->
   o={}
   o.query=()->
