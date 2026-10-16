@@ -2,7 +2,7 @@
 // vvTODO: section crud
 // vvTODO: page crud
 // vvTODO: note crud
-// TODO: noteText crud
+// vvTODO: noteText crud
 // 
 
 l=console.log
@@ -63,6 +63,41 @@ function cleanID(id) {
     } catch (e) { }
     return id
 }
+
+function wget(url) {
+    $.ajax({
+        url: url,
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function (response) {
+            l(response)
+            showalert(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+    return url
+}
+
+function wpost(url, data = {}) {
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        dataType: 'text', 
+        success: function (response) {
+            l(response)
+            showalert(response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    });
+    return url
+}
+
 
 function attachControlKey(id="") {
     //chromeErrorHandler2()
@@ -207,7 +242,7 @@ project.appendTheme = function (themes) {
     })
     project.getSelectID(function (e,response) {
         try {
-            project.selectedTheme=response.theme
+            project.selectedTheme=response.theme||"monokai"
             $("#themes").val(project.selectedTheme).change()
         } catch (e) {
             l(e)
@@ -234,7 +269,7 @@ project.appendLanguage = function (langs) {
     })
     project.getSelectID(function (e,response) {
         try {
-            project.selectedLanguage=response.language
+            project.selectedLanguage=response.language||"javascript"
             $("#languages").val(project.selectedLanguage).change()
         } catch (e) {
             l(e)
@@ -278,13 +313,39 @@ project.listLanguage = function (editor) {
     
 }
 
+user=null
+project.updateAdminTab = function () {
+    $.ajax({
+        url: '/user',
+        type: 'GET',
+        data: {},
+        dataType: 'text', 
+        success: function (response) {
+            user=response
+            //l(response)
+            if (response == "admin") {
+                $("#tabContent2").removeClass("fade")
+                $("#tabContent2").removeClass("hide")
+                $("#tabContent2").removeClass("d-none")
+                $("#tabContent2").show()
+            }
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+        }
+    }); 
+}
+
 project.updateList=function(projects){
     $("#projects").empty()
     projects.sort((a, b) => a.name.localeCompare(b.name));
     projects.forEach(element => {
         $("#projects").append(new Option(element.name, element.id));
     });
-    $("#projects").append(new Option("package.json", "package.json"));
+    if (user == "admin") {
+        $("#projects").append(new Option("package.json", "package.json"));        
+    }
+    $("#projects").append(new Option("temp", "temp"));        
 
     project.selected = cleanID($("#projects").val())
     project.getSelectID(function (e,response) {
@@ -1149,7 +1210,8 @@ initOnEvent=function(){
 //--
 
 $(document).ready(function () {
-    project.motd(function (e,r) { })
+    project.motd(function (e, r) { })
+    project.updateAdminTab()
     initOnEvent()
     project.list()
     project.listTheme()

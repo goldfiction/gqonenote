@@ -15,8 +15,10 @@ catch e
 # load db
 console.log "loading db..."
 db = new Datastore({ filename: config.server.db||'/root/db', autoload: true })
-db.persistence.setAutocompactionInterval 120000
-db.ensureIndex {fieldName:"id"}
+setTimeout ()->
+  db.persistence.setAutocompactionInterval 120000
+  db.ensureIndex {fieldName:"id"}
+,120000
 console.log "db loaded..."
 
 workFolder=config.server.workFolder||"./"
@@ -47,9 +49,13 @@ l "argv: ",process.argv
 
 if process.argv[2]=="execute"
   xpath=process.argv[3]
-  api.mod.runxpath {db:db,xpath:xpath},(e,r)->
-    if e
-      l e
+  api.mod.getXPathScript {db:db,xpath:xpath},(e,script)->
+    api.mod.runSH {db:db,script:script,shell:"coffeescript"},(e,r)->
+      if e
+        l e
+  #api.mod.runxpath {db:db,xpath:xpath},(e,r)->
+  #  if e
+  #    l e
 else
   # start gqexpress
   gqexpress.startServer  # invoke start server like this 

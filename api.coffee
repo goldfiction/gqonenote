@@ -665,7 +665,11 @@ routeHandler=(app,db)->
     setTimeout ()->
       mod.restartServer()
     ,500
-
+  
+  app.get "/user",(req,res)->
+    l req.auth
+    res.send 200,req.auth.username
+  
   app.post "/runsh",(req,res)->
     mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||"/bin/sh"),cwd:(req.body.cwd||"./")},(e,r)->
       if e
