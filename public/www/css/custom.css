@@ -55,6 +55,13 @@
     background-color: #AAA;
 }
 
+#popupConfirmBox{
+    position:absolute;
+    top:40%;
+    left:40%;
+    padding:20px;
+    background-color: #AAA;
+}
 
 #editor{
     opacity:0.95;

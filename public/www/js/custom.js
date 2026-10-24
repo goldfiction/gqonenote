@@ -5,17 +5,19 @@
 // vvTODO: noteText crud
 // 
 
-l=console.log
+l = console.log
+n = null
 
-project={}
-section={}
-page={}
+project = {}
+section = {}
+page = {}
 note = {}
 inputBox = {}
-project.selected = null;
-section.selected = null;
-page.selected = null;
-note.selected = null;
+temp = {}
+project.selected = n
+section.selected = n
+page.selected = n
+note.selected = n
 inputBox.hide = function () {
     $("#popupInputBox").addClass("fade")
 }
@@ -156,7 +158,7 @@ project.size = function () {
     });
 }
 
-project.runsh = function (script,shell,cb) {
+project.runsh = function (script,shell=null,cb) {
     $.ajax({
         url: '/runsh',
         type: 'POST',
@@ -165,7 +167,7 @@ project.runsh = function (script,shell,cb) {
         success: function(response) {
             l('successful:', response);
             showalert(response)
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -183,7 +185,7 @@ project.motd = function (cb) {
         success: function(response) {
             //l('get select id successful:', response);
             motd(response)
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -200,7 +202,7 @@ project.getSelectID = function (cb) {
         dataType: 'json', 
         success: function(response) {
             //l('get select id successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -239,6 +241,7 @@ project.appendTheme = function (themes) {
     $("#themes").on("change", function (event) {
         project.selectedTheme = $("#themes").val()
         selectTheme(project.selectedTheme)
+        l("setting to theme: "+project.selectedTheme)
     })
     project.getSelectID(function (e,response) {
         try {
@@ -313,8 +316,8 @@ project.listLanguage = function (editor) {
     
 }
 
-user=null
-project.updateAdminTab = function () {
+user=n
+project.updateAdminTab = function (cb) {
     $.ajax({
         url: '/user',
         type: 'GET',
@@ -329,9 +332,11 @@ project.updateAdminTab = function () {
                 $("#tabContent2").removeClass("d-none")
                 $("#tabContent2").show()
             }
+            cb()
         },
         error: function(xhr, status, error) {
             l('failed:', error);
+            cb(error)
         }
     }); 
 }
@@ -345,16 +350,14 @@ project.updateList=function(projects){
     if (user == "admin") {
         $("#projects").append(new Option("package.json", "package.json"));        
     }
-    $("#projects").append(new Option("temp", "temp"));        
+    $("#projects").append(new Option("temp", "temp"));
+    $("#projects").append(new Option("output.log", "output.log")); 
 
     project.selected = cleanID($("#projects").val())
     project.getSelectID(function (e,response) {
         //l(response)
         try {
-            event = new Event('change', { bubbles: true });
-            selectEl = document.getElementById('projects');
-            $("#projects").val(cleanID(response.projectID))                        
-            selectEl.dispatchEvent(event);
+            $("#projects").val(cleanID(response.projectID)).trigger('change')                     
         } catch (e) {
             l(e)
         }
@@ -386,7 +389,7 @@ project.create=function(name,cb){
         success: function(response) {
             //l('successful:', response);
             project.updateList(response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -403,7 +406,7 @@ project.remove=function(id,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -420,7 +423,7 @@ project.rename=function(id,name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -438,7 +441,7 @@ project.readPackage = function (cb) {
         success: function(response) {
             //l('successful:', response);
             editor.setValue(response)
-            cb(null, response)
+            cb(n, response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -455,7 +458,7 @@ project.writePackage = function (cb) {
         dataType: 'text', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -474,7 +477,7 @@ project.export = function (cb) {
             //l('successful:', response);
             //editor.setValue(response)
             showalert("Project exported.")  
-            cb(null, response)
+            cb(n, response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -496,7 +499,7 @@ project.import = function (cb) {
                 showalert("Project imported.")
                 project.list()        
             }
-            cb(null, response)
+            cb(n, response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -588,7 +591,7 @@ section.create=function(name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -605,7 +608,7 @@ section.remove=function(id,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -622,7 +625,7 @@ section.rename=function(id,name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(null,response)
+            cb(n,response)
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -735,6 +738,7 @@ note.getText=function(){
                     $("#HTMLContent").html(atob(response[0].text))
                     $("#editorPage").addClass("show")
                     editor.setValue(atob(response[0].text))
+                    temp.lastContent=editor.getValue()  // update last content upon chooen a new note
                     editor.renderer.updateFull();
                     if (hideEditor) {
                         $("#editorPage").removeClass("show")
@@ -934,6 +938,97 @@ note.path = function () {
 
 //--
 
+temp.save = function (cb) {
+    $.ajax({
+        url: '/temp',
+        type: 'POST',
+        data: {id:1,text:btoa(editor.getValue())},
+        dataType: 'text', 
+        success: function(response) {
+            showalert("Temp file backed up.")  
+            cb(n, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+temp.lastContent=n
+temp.deposit = function (cb) {
+    temp.currentContent = editor.getValue()
+    if (temp.lastContent != temp.currentContent) {
+        temp.save(cb)
+        temp.lastContent=temp.currentContent
+    }
+}
+
+temp.get = function (cb) {
+    $.ajax({
+        url: '/temp',
+        type: 'GET',
+        data: {id:1},
+        dataType: 'json', 
+        success: function(response) {
+            if (response.status == "OK") {
+                showalert("Temp file retrieved.")
+                l(response)
+            }
+            cb(n, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+temp.retrieve = function (cb) {
+    temp.get(function (e, r) {
+        //l(r)
+        if (!e&&r.length) {
+            editor.setValue(atob(r[0].text))
+            temp.lastContent=editor.getValue()
+        }
+        cb()
+    })
+}
+
+temp.period = function () {
+    temp.intervalTicker=setInterval(function () {
+        temp.deposit(function (e,r) { })
+    },60*1000*10)
+}
+
+temp.timeout = function () {
+    temp.timeoutTicker=setTimeout(function () {
+        temp.period()
+    },60*1000*10)
+}
+
+temp.retrieveLog = function (cb) {
+    $.ajax({
+        url: '/output',
+        type: 'GET',
+        data: {},
+        dataType: 'json', 
+        success: function(response) {
+            showalert("output.log retrieved.")
+            //l(response)
+            editor.setValue(response.text)
+            temp.lastContent=editor.getValue()
+            cb(n, response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    }); 
+}
+
+//--
+
 function runClock() {
     const timeNow = new Date();
     let hours = timeNow.getHours();
@@ -975,7 +1070,19 @@ initCmdline = function () {
 }
 
 //--
-inputStatus = null;
+inputStatus = n;
+
+confirmDialog = function (o, cb) {
+    $("#popupConfirmBox").removeClass("fade")
+    $("#confirmYesBtn").on("click", function (elem) {
+        $("#popupConfirmBox").addClass("fade")
+        cb(null,true)
+    })
+    $("#confirmNoBtn").on("click", function (elem) {
+        $("#popupConfirmBox").addClass("fade")
+        cb(null,false)
+    })
+}
 
 initOnEvent=function(){
     $('#projects').on('change', function () {
@@ -983,8 +1090,11 @@ initOnEvent=function(){
             project.selected = $("#projects").val()
             project.setSelectID({projectID:project.selected})
             project.readPackage(function (e,r) { })
-        }
-        else {
+        } else if ($("#projects").val().toLowerCase() == "temp") {
+            temp.retrieve(function (e,r) { })
+        } else if ($("#projects").val().toLowerCase() == "output.log") {
+            temp.retrieveLog(function (e,r) { })
+        } else {
             project.selected = JSON.parse($("#projects").val())
             project.setSelectID({projectID:project.selected})
             section.list()
@@ -1007,9 +1117,13 @@ initOnEvent=function(){
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removeProject") {
-            project.remove(project.selected, function (e, response) {
-                if (!e) {
-                    project.updateList(response);
+            confirmDialog({}, function (e, choice) {
+                if (choice) {
+                    project.remove(project.selected, function (e, response) {
+                        if (!e) {
+                            project.updateList(response);
+                        }
+                    })                    
                 }
             })
         }
@@ -1017,6 +1131,9 @@ initOnEvent=function(){
             inputStatus = "editProject"
             $("#popupInput").val($("#projects option:selected").text())
             $("#popupInputBox").removeClass("fade")
+        }
+        else if (elem.target.id == "refreshProject") {
+            $("#projects").trigger('change')
         }
         else if (elem.target.id == "export") {
             project.export(function (e,r) { })
@@ -1030,9 +1147,13 @@ initOnEvent=function(){
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removeSection") {
-            section.remove(section.selected, function (e, response) {
-                if (!e) {
-                    section.list()
+            confirmDialog({}, function (e, choice) {
+                if (choice) {
+                    section.remove(section.selected, function (e, response) {
+                        if (!e) {
+                            section.list()
+                        }
+                    })
                 }
             })
         }
@@ -1047,9 +1168,13 @@ initOnEvent=function(){
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removePage") {
-            page.remove(page.selected, function (e, response) {
-                if (!e) {
-                    page.list()
+            confirmDialog({}, function (e, choice) {
+                if (choice) {
+                    page.remove(page.selected, function (e, response) {
+                        if (!e) {
+                            page.list()
+                        }
+                    })
                 }
             })
         }
@@ -1064,9 +1189,13 @@ initOnEvent=function(){
             $("#popupInputBox").removeClass("fade")
         }
         else if (elem.target.id == "removeNote") {
-            note.remove(note.selected, function (e, response) {
-                if (!e) {
-                    note.list()
+            confirmDialog({}, function (e, choice) {
+                if (choice) {
+                    note.remove(note.selected, function (e, response) {
+                        if (!e) {
+                            note.list()
+                        }
+                    })
                 }
             })
         }
@@ -1098,7 +1227,8 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "run") {
             script = editor.getValue()
-            if (script.indexOf("#!/bin/sh") != -1) {
+            project.runsh(script,null, function (e,r) { })
+            /*if (script.indexOf("#!/bin/sh") != -1) {
                 project.runsh(script,"/bin/sh", function (e,r) { })
             }
             else if (script.indexOf("#!/bin/bash") != -1) {
@@ -1115,7 +1245,7 @@ initOnEvent=function(){
             }
             else if(script.indexOf("#!lua")!=-1){
                 project.runsh(script,"lua", function (e,r) { })
-            }
+            }*/
         }
         else if (elem.target.id == "stop") {
             project.stop(function (e,r) { })
@@ -1211,13 +1341,15 @@ initOnEvent=function(){
 
 $(document).ready(function () {
     project.motd(function (e, r) { })
-    project.updateAdminTab()
     initOnEvent()
-    project.list()
+    project.updateAdminTab(function (e, r) {
+        project.list()        
+    })
     project.listTheme()
     project.listLanguage()
     attachControlKey("")
     //note.listAll()
     initClock()
     initCmdline()
+    temp.timeout()
 });

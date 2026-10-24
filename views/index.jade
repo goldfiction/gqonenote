@@ -10,6 +10,7 @@ block content
                         button#addProject.btn.btn-secondary(type="button") [+]
                         button#removeProject.btn.btn-secondary(type="button") [-]
                         button#editProject.btn.btn-secondary(type="button") [E]
+                        button#refreshProject.btn.btn-secondary(type="button") [R]
                         select(name="project",id="projects")
                     div.inblock
                         p.inblock Theme:
@@ -76,5 +77,9 @@ block content
         input#popupInput(type="text",placeholder="Type something...")
         button#submitBtn.btn.btn-primary OK
         button#cancelBtn.btn.btn-secondary Cancel
+    #popupConfirmBox.popup.fade
+        label#popupLabel Are you sure?
+        button#confirmYesBtn.btn.btn-primary Yes
+        button#confirmNoBtn.btn.btn-secondary No
     #alertpopout.alert.alert-success.posabs(role="alert")
     #motd.alert.alert-success.posabs(role="alert")

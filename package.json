@@ -15,7 +15,10 @@
     "gqtryrun": "0.0.7",
     "ini": "5.0.0",
     "nedb": "1.8.0",
-    "typescript": "4.3.5"
+    "typescript": "4.3.5",
+    "async":"3.0.0",
+    "q":"",
+    "deep-extend":""
   },
   "devDependencies": {
     "coffeescript": "2.7.0",

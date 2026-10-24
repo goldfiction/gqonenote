@@ -37,6 +37,7 @@
 #     "id":1,
 #     "enabled":true
 # }
+# note entry
 # {
 #     "name":"note",
 #     "type":"note",
@@ -46,11 +47,21 @@
 #     "text":"",
 #     "enabled":true
 # }
+# temp file
+# {
+#     "name":"temp",
+#     "type":"temp",
+#     "id":1,
+#     "title":"temp",
+#     "text":"",
+#     "enabled":true
+# }
 
 ver=1.2
 
 tryrun=require "gqtryrun"
 l=console.log
+n=null
 fs=require "fs"
 path=require "path"
 exec=require("child_process").execSync
@@ -141,6 +152,14 @@ runSH1=(o,cb)->
     l "Output:\n",stdout
     cb(error,stdout)
 
+determineShell=(script)->
+  try
+    firstLine=script.split("\n")[0].trim()
+    if(firstLine.includes("#!")!=-1)
+      return firstLine.split("#!")[1]
+  catch e
+    return null  
+
 runSH1_2=(o,cb)->
   o.query=(o,cb)->
     l "trying to execute sh script\n",o.script
@@ -167,7 +186,7 @@ runPY=(o,cb)->
     fs.writeFileSync("./runscript",o.script)
     child=null
     msg=""
-    child = spawn 'python',["./runscript"],{ shell: true , cwd: "./"}
+    child = spawn 'python3.8',["./runscript"],{ shell: true , cwd: "./"}  #change this to python2 if needed
     child.stdout.on 'data',(data)->
       l "stdout: ",data.toString()
       msg+=data.toString()
@@ -226,22 +245,36 @@ runLua=(o,cb)->
       l "Child process exited with code ",code
       cb null,msg
   tryrun.run o.query,o,cb
+
+runGeneric=(o,cb)->
+  o.query=(o,cb)->
+    #l "trying to execute script with shell: "+o.shell+"\n",o.script
+    fs.writeFileSync("./runscript",o.script)
+    child=null
+    msg=""
+    child = spawn o.shell,["./runscript"],{ shell: true , cwd: "./"}
+    child.stdout.on 'data',(data)->
+      l "stdout: ",data.toString()
+      msg+=data.toString()
+    child.stderr.on 'data',(data)->
+      l "stderr: ",data.toString()
+    child.on 'close',(code)->
+      l "Child process exited with code ",code
+      cb null,msg
+  tryrun.run o.query,o,cb
+
 mod.runSH=(o,cb)->
   #l o
-  l "running script using shell: "+o.shell
-  l "script: \n",o.script
+  o.shell=o.shell||determineShell(o.script)
+  l "running script using shell: "+o.shell+"\n",o.script
   o.query=(o,cb)->
-    if o.shell=="/bin/sh"||o.shell=="/bin/bash"
-      runSH1_2 o,cb
-    else if o.shell=="javascript"
+    if o.shell=="javascript"
       mod.runOneScript {db:o.db,code:o.script},cb
     else if o.shell=="coffeescript"
       code = CoffeeScript.compile(o.script, { bare: true })
       mod.runOneScript {db:o.db,code:code},cb
-    else if o.shell=="python"
-      runPY o,cb
-    else if o.shell=="lua"
-      runLua o,cb
+    else
+      runGeneric o,cb
   tryrun.run o.query,o,cb
 
 mod.getXpathNote=(o,cb)->
@@ -322,6 +355,7 @@ project={}
 section={}
 page={}
 note={}
+temp={}
 
 project.getID=(o,cb)->
   mod.getID o,(e,r)->
@@ -344,21 +378,33 @@ note.getID=(o,cb)->
 project.incrementID=(o,cb)->
   mod.getID o,(e,r)->
     o.doc={}
-    o.doc.projectID=r.projectID+1
+    o.doc.projectID=o.doc.id+1
     mod.updateID o,cb
+
+project.checkID=(o,id,cb)->
+  o.db.find {type:"project",id:id},{multi:true},(e,r)->
+    cb(n,r.length==0)
+
+project.getNextID=(o,id,cb)->
+  project.checkID o,id,(e,r)->
+    if(r)
+      cb(null,id)
+    else
+      project.getNextID(o,id+1,cb)
 
 project.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
-      o.doc= 
-        "name":o.doc.name||"project"
-        "type":"project"
-        "id":id.projectID+1
-        "enabled":true
-        "createdAt": new Date() 
-      o.db.insert o.doc,(e,r)->
-        project.incrementID o,(e2,r2)->
-          cb e||e2,r
+      project.getNextID o,id.projectID+1,(e,id)->
+        o.doc= 
+          "name":o.doc.name||"project"
+          "type":"project"
+          "id":id
+          "enabled":true
+          "createdAt": new Date() 
+        o.db.insert o.doc,(e,r)->
+          project.incrementID o,(e2,r2)->
+            cb e||e2,r
   tryrun.run o.query,o,cb
 
 project.list=(o,cb)->
@@ -453,22 +499,34 @@ project.writePackage=(o,cb)->
 section.incrementID=(o,cb)->
   mod.getID o,(e,r)->
     o.doc={}
-    o.doc.sectionID=r.sectionID+1
+    o.doc.sectionID=o.doc.id+1
     mod.updateID o,cb
+
+section.checkID=(o,id,cb)->
+  o.db.find {type:"section",id:id},{multi:true},(e,r)->
+    cb(n,r.length==0)
+
+section.getNextID=(o,id,cb)->
+  section.checkID o,id,(e,r)->
+    if(r)
+      cb(null,id)
+    else
+      section.getNextID(o,id+1,cb)
 
 section.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
-      o.doc= 
-        "name":o.doc.name||"section"
-        "type":"section"
-        "project":JSON.parse(o.doc.project)
-        "id":id.sectionID+1
-        "enabled":true
-        "createdAt": new Date() 
-      o.db.insert o.doc,(e,r)->
-        section.incrementID o,(e2,r2)->
-          cb e||e2,r
+      section.getNextID o,id.sectionID+1,(e,id)->
+        o.doc= 
+          "name":o.doc.name||"section"
+          "type":"section"
+          "project":JSON.parse(o.doc.project)
+          "id":id
+          "enabled":true
+          "createdAt": new Date() 
+        o.db.insert o.doc,(e,r)->
+          section.incrementID o,(e2,r2)->
+            cb e||e2,r
   tryrun.run o.query,o,cb
 
 section.list=(o,cb)->
@@ -477,6 +535,14 @@ section.list=(o,cb)->
       "type":"section"
       "project":JSON.parse(o.doc.project)
       "enabled":true
+    ,cb
+  tryrun.run o.query,o,cb
+
+section.listAll=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find
+      "type":"section"
+      "project":JSON.parse(o.doc.project)
     ,cb
   tryrun.run o.query,o,cb
 
@@ -491,28 +557,45 @@ section.remove=(o,cb)->
     o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
+section.enable=(o,cb)->
+  o.query=(o,cb)->
+    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:true}},{multi:false},cb
+  tryrun.run o.query,o,cb
+
 #---
 
 page.incrementID=(o,cb)->
   mod.getID o,(e,r)->
     o.doc={}
-    o.doc.pageID=r.pageID+1
+    o.doc.pageID=o.doc.id+1
     mod.updateID o,cb
+
+page.checkID=(o,id,cb)->
+  o.db.find {type:"page",id:id},{multi:true},(e,r)->
+    cb(n,r.length==0)
+
+page.getNextID=(o,id,cb)->
+  page.checkID o,id,(e,r)->
+    if(r)
+      cb(null,id)
+    else
+      page.getNextID(o,id+1,cb)
 
 page.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
-      o.doc= 
-        "name":o.doc.name||"page"
-        "type":"page"
-        "project":JSON.parse(o.doc.project)
-        "section":JSON.parse(o.doc.section)
-        "id":id.pageID+1
-        "enabled":true
-        "createdAt": new Date() 
-      o.db.insert o.doc,(e,r)->
-        page.incrementID o,(e2,r2)->
-          cb e||e2,r
+      page.getNextID o,id.pageID+1,(e,id)->
+        o.doc=
+          "name":o.doc.name||"page"
+          "type":"page"
+          "project":JSON.parse(o.doc.project)
+          "section":JSON.parse(o.doc.section)
+          "id":id
+          "enabled":true
+          "createdAt": new Date() 
+        o.db.insert o.doc,(e,r)->
+          page.incrementID o,(e2,r2)->
+            cb e||e2,r
   tryrun.run o.query,o,cb
 
 page.list=(o,cb)->
@@ -551,26 +634,38 @@ page.remove=(o,cb)->
 note.incrementID=(o,cb)->
   mod.getID o,(e,r)->
     o.doc={}
-    o.doc.noteID=r.noteID+1
+    o.doc.noteID=o.doc.id+1
     mod.updateID o,cb
+
+note.checkID=(o,id,cb)->
+  o.db.find {type:"note",id:id},{multi:true},(e,r)->
+    cb(n,r.length==0)
+
+note.getNextID=(o,id,cb)->
+  note.checkID o,id,(e,r)->
+    if(r)
+      cb(null,id)
+    else
+      note.getNextID(o,id+1,cb)
 
 note.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
-      o.doc= 
-        "name":o.doc.name||"note"
-        "type":"note"
-        "project":JSON.parse(o.doc.project)
-        "section":JSON.parse(o.doc.section)
-        "page":JSON.parse(o.doc.page)
-        "title":o.doc.title||""
-        "text":o.doc.text||""
-        "id":id.noteID+1
-        "enabled":true
-        "createdAt": new Date() 
-      o.db.insert o.doc,(e,r)->
-        note.incrementID o,(e2,r2)->
-          cb e||e2,r
+      note.getNextID o,id.noteID+1,(e,id)->
+        o.doc= 
+          "name":o.doc.name||"note"
+          "type":"note"
+          "project":JSON.parse(o.doc.project)
+          "section":JSON.parse(o.doc.section)
+          "page":JSON.parse(o.doc.page)
+          "title":o.doc.title||""
+          "text":o.doc.text||""
+          "id":id
+          "enabled":true
+          "createdAt": new Date() 
+        o.db.insert o.doc,(e,r)->
+          note.incrementID o,(e2,r2)->
+            cb e||e2,r
   tryrun.run o.query,o,cb
 
 note.path=(o,cb)->
@@ -635,6 +730,41 @@ note.remove=(o,cb)->
     o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
+#---
+
+temp.get=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find {type:"temp",id:JSON.parse(o.doc.id||1),enabled:true},{multi:false},cb
+  tryrun.run o.query,o,cb
+
+temp.save=(o,cb)->
+  o.query=(o,cb)->
+    o.db.find {type:"temp",id:JSON.parse(o.doc.id||1),enabled:true},{multi:true},(e,r)->
+      if r.length==0
+        # create new temp doc when it is not found
+        o.doc=
+          "name":o.doc.name||"temp"
+          "type":"temp"
+          "title":o.doc.title||"temp"
+          "text":o.doc.text||""
+          "id":JSON.parse(o.doc.id||1)
+          "enabled":true
+          "createdAt": new Date() 
+        o.db.insert o.doc,(e,r)->
+          cb e,r
+      else
+        # update existing temp doc when it exists
+        o.db.update {type:"temp",id:JSON.parse(o.doc.id)},{$set:o.doc},{multi:false},cb
+  tryrun.run o.query,o,cb
+
+temp.output=(o,cb)->
+  o.query=(o,cb)->
+    text=""
+    try
+      text=fs.readFileSync("./output.log").toString()
+    catch e
+    cb(n,{text:text})
+  tryrun.run o.query,o,cb
 #---
 
 routeHandler=(app,db)->
@@ -719,6 +849,18 @@ routeHandler=(app,db)->
       res.send 200,r
   #--
   
+  app.get "/section/all",(req,res)->
+    #l req.query
+    section.listAll {db:db,doc:req.query},(e,r)->
+      l r
+      res.send 200,r
+
+  app.get "/section/enable",(req,res)->
+    #l req.query
+    section.enable {db:db,doc:req.query},(e,r)->
+      l r
+      res.send 200,r
+
   app.get "/section",(req,res)->
     #l req.query
     section.list {db:db,doc:req.query},(e,r)->
@@ -810,6 +952,23 @@ routeHandler=(app,db)->
   app.put "/select",(req,res)->
     mod.updateSelectID {db:db,doc:req.body},(e,r)->
       res.send 200,r 
+
+  #--
+
+  app.get "/temp",(req,res)->
+    temp.get {db:db,doc:req.body},(e,r)->
+      res.send 200,r
+
+  app.post "/temp",(req,res)->
+    temp.save {db:db,doc:req.body},(e,r)->
+      res.send 200,r
+
+  app.get "/output",(req,res)->
+    temp.output {db:db},(e,r)->
+      #l r
+      res.send 200,r
+
+  #--
 
   return app
 
