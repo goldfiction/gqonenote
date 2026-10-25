@@ -26,6 +26,7 @@ block content
                         button#addSection.btn.btn-secondary(type="button") [+]
                         button#removeSection.btn.btn-secondary(type="button") [-]
                         button#editSection.btn.btn-secondary(type="button") [E]
+                        button#moveSection.btn.btn-secondary(type="button") [M]
                     div.inblock.wide#sections
                 .border
                     div.inblock
@@ -33,6 +34,7 @@ block content
                         button#addPage.btn.btn-secondary(type="button") [+]
                         button#removePage.btn.btn-secondary(type="button") [-]
                         button#editPage.btn.btn-secondary(type="button") [E]
+                        button#movePage.btn.btn-secondary(type="button") [M]
                     div.inblock.wide#pages
                 .border
                     div.inblock
@@ -40,6 +42,7 @@ block content
                         button#addNote.btn.btn-secondary(type="button") [+]
                         button#removeNote.btn.btn-secondary(type="button") [-]
                         button#editNote.btn.btn-secondary(type="button") [E]
+                        button#moveNote.btn.btn-secondary(type="button") [M]
                         button#saveNote.btn.btn-secondary(type="button") [Save]
                         button#saveAsNote.btn.btn-secondary(type="button") [Save As]
                         button#duplicateNote.btn.btn-secondary(type="button") [Duplicate]
@@ -81,5 +84,18 @@ block content
         label#popupLabel Are you sure?
         button#confirmYesBtn.btn.btn-primary Yes
         button#confirmNoBtn.btn.btn-secondary No
+    #popupMoveNoteBox.popup.fade
+        label Project:
+        select(name="project",id="moveProject")
+        br
+        label Section:
+        select(name="section",id="moveSection")
+        br
+        label Page:
+        select(name="page",id="movePage")
+        br
+        button#moveNoteBtn.btn.btn-primary Move
+        button#copyNoteBtn.btn.btn-primary Copy
+        button#cancelBtn.btn.btn-secondary Cancel
     #alertpopout.alert.alert-success.posabs(role="alert")
     #motd.alert.alert-success.posabs(role="alert")

@@ -18,6 +18,7 @@ db = new Datastore({ filename: config.server.db||'/root/db', autoload: true })
 setTimeout ()->
   db.persistence.setAutocompactionInterval 120000
   db.ensureIndex {fieldName:"id"}
+  db.ensureIndex {fieldName:"_id",unique:true}
 ,120000
 console.log "db loaded..."
 

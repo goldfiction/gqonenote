@@ -55,7 +55,7 @@
     background-color: #AAA;
 }
 
-#popupConfirmBox{
+#popupConfirmBox,#popupMoveNoteBox{
     position:absolute;
     top:40%;
     left:40%;

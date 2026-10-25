@@ -100,6 +100,30 @@ function wpost(url, data = {}) {
     return url
 }
 
+// generic ajax method
+// input:o.url
+// input:o.method
+// input:o.data
+
+function wajax(o = {},cb) {
+    $.ajax({
+        url: o.url||"/",
+        type: o.method||"GET",
+        data: o.data || {},
+        dataType: 'json', 
+        success: function (response) {
+            l(response)
+            showalert(response)
+            cb(null,response)
+        },
+        error: function(xhr, status, error) {
+            l('failed:', error);
+            cb(error)
+        }
+    });
+    return url
+}
+
 
 function attachControlKey(id="") {
     //chromeErrorHandler2()
@@ -129,14 +153,13 @@ function attachControlKey(id="") {
         } else if (event.ctrlKey && (event.key === 'r' || event.key === 'R')) {
             event.preventDefault();
             console.log("Ctrl+r was pressed!");
-            console.log("id is: "+id)
+            //console.log("id is: "+id)
             //resetEditorPosition(id)
         } else if (event.altKey && event.key === "Enter") {
             event.preventDefault();
-            console.log("Alt+Enter was pressed!");
-            console.log("id is: " + id)
+            //console.log("Alt+Enter was pressed!");
+            //console.log("id is: " + id)
             toggleFullScreen(id)
-        } else if (event.ctrlKey) { 
         }
     });
 }
@@ -312,8 +335,7 @@ project.listLanguage = function (editor) {
         error: function(xhr, status, error) {
             l('failed:', error);
         }
-    });    
-    
+    });      
 }
 
 user=n
@@ -359,7 +381,7 @@ project.updateList=function(projects){
         try {
             $("#projects").val(cleanID(response.projectID)).trigger('change')                     
         } catch (e) {
-            l(e)
+            //l(e)
         }
     })        
 }
@@ -1084,6 +1106,16 @@ confirmDialog = function (o, cb) {
     })
 }
 
+attachEnterKey = function () {
+    $('#popupInput').off("keydown");
+    $('#popupInput').on('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Stop standard browser submit
+            $("#submitBtn").click()
+        }
+    });
+}
+
 initOnEvent=function(){
     $('#projects').on('change', function () {
         if ($("#projects").val().toLowerCase() == "package.json") {
@@ -1115,6 +1147,7 @@ initOnEvent=function(){
             //l("addProject!")
             inputStatus="addProject"
             $("#popupInputBox").removeClass("fade")
+            attachEnterKey()
         }
         else if (elem.target.id == "removeProject") {
             confirmDialog({}, function (e, choice) {
@@ -1129,8 +1162,9 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "editProject") {
             inputStatus = "editProject"
-            $("#popupInput").val($("#projects option:selected").text())
             $("#popupInputBox").removeClass("fade")
+            attachEnterKey()
+            $("#popupInput").val($("#projects option:selected").text())
         }
         else if (elem.target.id == "refreshProject") {
             $("#projects").trigger('change')
@@ -1145,6 +1179,7 @@ initOnEvent=function(){
         else if (elem.target.id == "addSection") {
             inputStatus="addSection"
             $("#popupInputBox").removeClass("fade")
+            attachEnterKey()
         }
         else if (elem.target.id == "removeSection") {
             confirmDialog({}, function (e, choice) {
@@ -1159,13 +1194,15 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "editSection") {
             inputStatus="editSection"
-            $("#popupInput").val($(".section.selected").text())
             $("#popupInputBox").removeClass("fade")
+            $("#popupInput").val($(".section.selected").text())
+            attachEnterKey()
         }
         //--
         else if (elem.target.id == "addPage") {
-            inputStatus="addPage"
             $("#popupInputBox").removeClass("fade")
+            attachEnterKey()
+            inputStatus="addPage"
         }
         else if (elem.target.id == "removePage") {
             confirmDialog({}, function (e, choice) {
@@ -1180,13 +1217,15 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "editPage") {
             inputStatus = "editPage"
-            $("#popupInput").val($(".page.selected").text())
             $("#popupInputBox").removeClass("fade")
+            $("#popupInput").val($(".page.selected").text())
+            attachEnterKey()
         }
         //--
         else if (elem.target.id == "addNote") {
             inputStatus="addNote"
             $("#popupInputBox").removeClass("fade")
+            attachEnterKey()
         }
         else if (elem.target.id == "removeNote") {
             confirmDialog({}, function (e, choice) {
@@ -1201,16 +1240,18 @@ initOnEvent=function(){
         }
         else if (elem.target.id == "editNote") {
             inputStatus = "editNote"
-            $("#popupInput").val($(".note.selected").text())
             $("#popupInputBox").removeClass("fade")
+            $("#popupInput").val($(".note.selected").text())
+            attachEnterKey()
         }
         else if (elem.target.id == "saveNote") {
             note.text()
         }
         else if (elem.target.id == "saveAsNote") {
             inputStatus = "saveAsNote"
-            $("#popupInput").val($(".note.selected").text())
             $("#popupInputBox").removeClass("fade")
+            $("#popupInput").val($(".note.selected").text())
+            attachEnterKey()
         }
         else if (elem.target.id == "duplicateNote") {
             note.duplicate($(".note[value='"+note.selected+"']").text(), $("#popupInput").val(), function (e, response) {
@@ -1222,30 +1263,12 @@ initOnEvent=function(){
         }
         //--
         else if (elem.target.id == "cancelBtn") {
-            $("#popupInputBox").addClass("fade")
             $("#popupInput").val("")
+            $("#popupInputBox").addClass("fade")
         }
         else if (elem.target.id == "run") {
             script = editor.getValue()
-            project.runsh(script,null, function (e,r) { })
-            /*if (script.indexOf("#!/bin/sh") != -1) {
-                project.runsh(script,"/bin/sh", function (e,r) { })
-            }
-            else if (script.indexOf("#!/bin/bash") != -1) {
-                project.runsh(script,"/bin/bash", function (e,r) { })
-            }
-            else if(script.indexOf("#!javascript")!=-1){
-                project.runsh(script,"javascript", function (e,r) { })
-            }
-            else if(script.indexOf("#!coffeescript")!=-1){
-                project.runsh(script,"coffeescript", function (e,r) { })
-            }
-            else if(script.indexOf("#!python")!=-1){
-                project.runsh(script,"python", function (e,r) { })
-            }
-            else if(script.indexOf("#!lua")!=-1){
-                project.runsh(script,"lua", function (e,r) { })
-            }*/
+            project.runsh(script,null,function (e,r) { })
         }
         else if (elem.target.id == "stop") {
             project.stop(function (e,r) { })
@@ -1260,13 +1283,15 @@ initOnEvent=function(){
         else if (elem.target.id == "submitBtn") {
             //--
             if (inputStatus == "addProject") {
+                projectName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                project.create($("#popupInput").val(), function (e, response) {
+                project.create(projectName, function (e, response) {
                     $("#popupInput").val("")
                 })
             } else if (inputStatus == "editProject") {
+                projectName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                project.rename(project.selected, $("#popupInput").val(), function (e, response) {
+                project.rename(project.selected, projectName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         project.updateList(response)                        
@@ -1274,16 +1299,18 @@ initOnEvent=function(){
                 })
                 //--
             } else if (inputStatus == "addSection") {
+                sectionName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                section.create($("#popupInput").val(), function (e, response) {
+                section.create(sectionName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         section.list()
                     }
                 })
             } else if (inputStatus == "editSection") {
+                sectionName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                section.rename(section.selected, $("#popupInput").val(), function (e, response) {
+                section.rename(section.selected,sectionName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         section.list()
@@ -1291,16 +1318,18 @@ initOnEvent=function(){
                 })
                 //--
             } else if (inputStatus == "addPage") {
+                pageName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                page.create($("#popupInput").val(), function (e, response) {
+                page.create(pageName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         page.list()
                     }
                 })
             } else if (inputStatus == "editPage") {
+                pageName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                page.rename(page.selected, $("#popupInput").val(), function (e, response) {
+                page.rename(page.selected, pageName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         page.list()
@@ -1308,24 +1337,27 @@ initOnEvent=function(){
                 })
                 //--
             } else if (inputStatus == "addNote") {
+                noteName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                note.create($("#popupInput").val(), function (e, response) {
+                note.create(noteName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         note.list()
                     }
                 })
             } else if (inputStatus == "editNote") {
+                noteName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                note.rename(note.selected, $("#popupInput").val(), function (e, response) {
+                note.rename(note.selected, noteName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         note.list()
                     }
                 })
             } else if (inputStatus == "saveAsNote") {
+                noteName=$("#popupInput").val()
                 $("#popupInputBox").addClass("fade")
-                note.saveas($("#popupInput").val(), function (e, response) {
+                note.saveas(noteName, function (e, response) {
                     $("#popupInput").val("")
                     if (!e) {
                         note.list()

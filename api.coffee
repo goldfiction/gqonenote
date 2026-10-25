@@ -73,6 +73,13 @@ CoffeeScript=require "coffeescript"
 #LuaState=require("lua-state").LuaState
 #---
 
+cleanID=(id)->
+  id2=id
+  try
+    id2=JSON.parse id
+  catch e
+  id2
+
 mod={}
 mod.indexTemp=
   "type":"index"
@@ -123,7 +130,7 @@ mod.getTheme=(o,cb)->
     files = fs.readdirSync folderPath
     files = files.filter (file)->
       path.extname(file)=='.css'
-    l 'CSS Files:',files
+    #l 'CSS Files:',files
     cb null,files
   catch e
     console.error('Error reading folder:',e)
@@ -135,7 +142,7 @@ mod.getLanguage=(o,cb)->
     files = fs.readdirSync folderPath
     files = files.filter (file)->
       path.extname(file)=='.js'&&file.indexOf("mode-")!=-1
-    l 'Language Files:',files
+    #l 'Language Files:',files
     cb null,files
   catch e
     console.error('Error reading folder:',e)
@@ -359,27 +366,29 @@ temp={}
 
 project.getID=(o,cb)->
   mod.getID o,(e,r)->
-    cb e,r.projectID
+    cb e,r.projectID||0
 
 section.getID=(o,cb)->
   mod.getID o,(e,r)->
-    cb e,r.sectionID
+    cb e,r.sectionID||0
 
 page.getID=(o,cb)->
   mod.getID o,(e,r)->
-    cb e,r.pageID
+    cb e,r.pageID||0
 
 note.getID=(o,cb)->
   mod.getID o,(e,r)->
-    cb e,r.noteID
+    cb e,r.noteID||0
 
 #---
 
 project.incrementID=(o,cb)->
   mod.getID o,(e,r)->
-    o.doc={}
-    o.doc.projectID=o.doc.id+1
-    mod.updateID o,cb
+    o2={}
+    o2.doc={}
+    o2.doc.projectID=o.doc.id+1
+    o2.db=o.db
+    mod.updateID o2,cb
 
 project.checkID=(o,id,cb)->
   o.db.find {type:"project",id:id},{multi:true},(e,r)->
@@ -393,17 +402,22 @@ project.getNextID=(o,id,cb)->
       project.getNextID(o,id+1,cb)
 
 project.create=(o,cb)->
+  projectName=o.doc.name||"project"
   o.query=(o,cb)->
     mod.getID o,(e,id)->
       project.getNextID o,id.projectID+1,(e,id)->
-        o.doc= 
-          "name":o.doc.name||"project"
+        #l o.doc
+        o2={}
+        o2.doc= 
+          "name":projectName
           "type":"project"
           "id":id
           "enabled":true
           "createdAt": new Date() 
-        o.db.insert o.doc,(e,r)->
-          project.incrementID o,(e2,r2)->
+        #l o2.doc
+        o2.db=o.db
+        o.db.insert o2.doc,(e,r)->
+          project.incrementID o2,(e2,r2)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
@@ -466,12 +480,12 @@ project.import=(o,cb)->
 
 project.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
+    o.db.update {type:"project",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 project.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"project",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
+    o.db.update {type:"project",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 project.readPackage=(o,cb)->
@@ -498,9 +512,11 @@ project.writePackage=(o,cb)->
 
 section.incrementID=(o,cb)->
   mod.getID o,(e,r)->
-    o.doc={}
-    o.doc.sectionID=o.doc.id+1
-    mod.updateID o,cb
+    o2={}
+    o2.doc={}
+    o2.doc.sectionID=o.doc.id+
+    o2.db=o.db
+    mod.updateID o2,cb
 
 section.checkID=(o,id,cb)->
   o.db.find {type:"section",id:id},{multi:true},(e,r)->
@@ -517,15 +533,17 @@ section.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
       section.getNextID o,id.sectionID+1,(e,id)->
-        o.doc= 
+        o2={}
+        o2.doc= 
           "name":o.doc.name||"section"
           "type":"section"
-          "project":JSON.parse(o.doc.project)
+          "project":cleanID(o.doc.project)
           "id":id
           "enabled":true
           "createdAt": new Date() 
-        o.db.insert o.doc,(e,r)->
-          section.incrementID o,(e2,r2)->
+        o2.db=o.db
+        o.db.insert o2.doc,(e,r)->
+          section.incrementID o2,(e2,r2)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
@@ -533,7 +551,7 @@ section.list=(o,cb)->
   o.query=(o,cb)->
     o.db.find
       "type":"section"
-      "project":JSON.parse(o.doc.project)
+      "project":cleanID(o.doc.project)
       "enabled":true
     ,cb
   tryrun.run o.query,o,cb
@@ -542,33 +560,35 @@ section.listAll=(o,cb)->
   o.query=(o,cb)->
     o.db.find
       "type":"section"
-      "project":JSON.parse(o.doc.project)
+      "project":cleanID(o.doc.project)
     ,cb
   tryrun.run o.query,o,cb
 
 section.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
+    o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 section.remove=(o,cb)->
   o.query=(o,cb)->
     #l o
-    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
+    o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 section.enable=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"section",id:JSON.parse(o.doc.id)},{$set:{enabled:true}},{multi:false},cb
+    o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{enabled:true}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
 
 page.incrementID=(o,cb)->
   mod.getID o,(e,r)->
-    o.doc={}
-    o.doc.pageID=o.doc.id+1
-    mod.updateID o,cb
+    o2={}
+    o2.doc={}
+    o2.doc.pageID=o.doc.id+1
+    o2.db=o.db
+    mod.updateID o2,cb
 
 page.checkID=(o,id,cb)->
   o.db.find {type:"page",id:id},{multi:true},(e,r)->
@@ -585,16 +605,18 @@ page.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
       page.getNextID o,id.pageID+1,(e,id)->
-        o.doc=
+        o2={}
+        o2.doc=
           "name":o.doc.name||"page"
           "type":"page"
-          "project":JSON.parse(o.doc.project)
-          "section":JSON.parse(o.doc.section)
+          "project":cleanID(o.doc.project)
+          "section":cleanID(o.doc.section)
           "id":id
           "enabled":true
           "createdAt": new Date() 
-        o.db.insert o.doc,(e,r)->
-          page.incrementID o,(e2,r2)->
+        o2.db=o.db
+        o.db.insert o2.doc,(e,r)->
+          page.incrementID o2,(e2,r2)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
@@ -603,8 +625,8 @@ page.list=(o,cb)->
     #l o
     o.db.find
       "type":"page"
-      "project":JSON.parse(o.doc.project)
-      "section":JSON.parse(o.doc.section)
+      "project":cleanID(o.doc.project)
+      "section":cleanID(o.doc.section)
       "enabled":true
     ,cb
   tryrun.run o.query,o,cb
@@ -613,9 +635,9 @@ page.rename=(o,cb)->
   o.query=(o,cb)->
     o.db.update 
       type:"page"
-      id:JSON.parse(o.doc.id)
-      project:JSON.parse(o.doc.project)
-      section:JSON.parse(o.doc.section)
+      id:cleanID(o.doc.id)
+      project:cleanID(o.doc.project)
+      section:cleanID(o.doc.section)
     ,{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
@@ -623,9 +645,9 @@ page.remove=(o,cb)->
   o.query=(o,cb)->
     o.db.update 
       type:"page"
-      id:JSON.parse(o.doc.id)
-      project:JSON.parse(o.doc.project)
-      section:JSON.parse(o.doc.section)
+      id:cleanID(o.doc.id)
+      project:cleanID(o.doc.project)
+      section:cleanID(o.doc.section)
     ,{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
@@ -633,9 +655,11 @@ page.remove=(o,cb)->
 
 note.incrementID=(o,cb)->
   mod.getID o,(e,r)->
-    o.doc={}
-    o.doc.noteID=o.doc.id+1
-    mod.updateID o,cb
+    o2={}
+    o2.doc={}
+    o2.doc.noteID=o.doc.id+1
+    o2.db=o.db
+    mod.updateID o2,cb
 
 note.checkID=(o,id,cb)->
   o.db.find {type:"note",id:id},{multi:true},(e,r)->
@@ -652,32 +676,37 @@ note.create=(o,cb)->
   o.query=(o,cb)->
     mod.getID o,(e,id)->
       note.getNextID o,id.noteID+1,(e,id)->
-        o.doc= 
+        o2={}
+        o2.doc= 
           "name":o.doc.name||"note"
           "type":"note"
-          "project":JSON.parse(o.doc.project)
-          "section":JSON.parse(o.doc.section)
-          "page":JSON.parse(o.doc.page)
+          "project":cleanID(o.doc.project)
+          "section":cleanID(o.doc.section)
+          "page":cleanID(o.doc.page)
           "title":o.doc.title||""
           "text":o.doc.text||""
           "id":id
           "enabled":true
           "createdAt": new Date() 
-        o.db.insert o.doc,(e,r)->
-          note.incrementID o,(e2,r2)->
+        o2.db=o.db
+        o.db.insert o2.doc,(e,r)->
+          note.incrementID o2,(e2,r2)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
 note.path=(o,cb)->
   o.query=(o,cb)->
-    o.db.find {type:"note",id:JSON.parse(o.doc.id),enabled:true},{multi:false},(e1,noteDoc)->
-      noteDoc=noteDoc[0]
-      o.db.find {type:"project",id:JSON.parse(noteDoc.project),enabled:true},{multi:false},(e2,projectDoc)->
-        o.db.find {type:"section",id:JSON.parse(noteDoc.section),enabled:true},{multi:false},(e3,sectionDoc)->
-          o.db.find {type:"page",id:JSON.parse(noteDoc.page),enabled:true},{multi:false},(e4,pageDoc)->
-            xpath=projectDoc[0].name+"\\\\"+sectionDoc[0].name+"\\\\"+pageDoc[0].name+"\\\\"+noteDoc.name
-            cb e1||e2||e3||e4,xpath
-      
+    o.db.find {type:"note",id:cleanID(o.doc.id),enabled:true},{multi:false},(e1,noteDoc)->
+      l noteDoc
+      if noteDoc.length==0
+        cb null,""
+      else
+        noteDoc=noteDoc[0]
+        o.db.find {type:"project",id:cleanID(noteDoc.project),enabled:true},{multi:false},(e2,projectDoc)->
+          o.db.find {type:"section",id:cleanID(noteDoc.section),enabled:true},{multi:false},(e3,sectionDoc)->
+            o.db.find {type:"page",id:cleanID(noteDoc.page),enabled:true},{multi:false},(e4,pageDoc)->
+              xpath=projectDoc[0].name+"\\\\"+sectionDoc[0].name+"\\\\"+pageDoc[0].name+"\\\\"+noteDoc.name
+              cb e1||e2||e3||e4,xpath      
   tryrun.run o.query,o,cb
 
 note.list=(o,cb)->
@@ -685,9 +714,9 @@ note.list=(o,cb)->
     #l o
     o.db.find
       "type":"note"
-      "project":JSON.parse(o.doc.project)
-      "section":JSON.parse(o.doc.section)
-      "page":JSON.parse(o.doc.page)
+      "project":cleanID(o.doc.project)
+      "section":cleanID(o.doc.section)
+      "page":cleanID(o.doc.page)
       "enabled":true
     ,(e,r)->
       r = r.map(({ text, ...rest }) => rest)
@@ -707,54 +736,55 @@ note.listAll=(o,cb)->
 
 note.rename=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
+    o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.updateTitle=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{title:o.doc.title}},{multi:false},cb
+    o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{title:o.doc.title}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.updateText=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{text:o.doc.text}},{multi:false},cb
+    o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{text:o.doc.text}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.getText=(o,cb)->
   o.query=(o,cb)->
-    o.db.find {type:"note",id:JSON.parse(o.doc.id),enabled:true},{multi:false},cb
+    o.db.find {type:"note",id:cleanID(o.doc.id),enabled:true},{multi:false},cb
   tryrun.run o.query,o,cb
 
 note.remove=(o,cb)->
   o.query=(o,cb)->
-    o.db.update {type:"note",id:JSON.parse(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
+    o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
 
 temp.get=(o,cb)->
   o.query=(o,cb)->
-    o.db.find {type:"temp",id:JSON.parse(o.doc.id||1),enabled:true},{multi:false},cb
+    o.db.find {type:"temp",id:cleanID(o.doc.id||1),enabled:true},{multi:false},cb
   tryrun.run o.query,o,cb
 
 temp.save=(o,cb)->
   o.query=(o,cb)->
-    o.db.find {type:"temp",id:JSON.parse(o.doc.id||1),enabled:true},{multi:true},(e,r)->
+    o.db.find {type:"temp",id:cleanID(o.doc.id||1),enabled:true},{multi:true},(e,r)->
       if r.length==0
         # create new temp doc when it is not found
-        o.doc=
+        o2={}
+        o2.doc=
           "name":o.doc.name||"temp"
           "type":"temp"
           "title":o.doc.title||"temp"
           "text":o.doc.text||""
-          "id":JSON.parse(o.doc.id||1)
+          "id":cleanID(o.doc.id||1)
           "enabled":true
           "createdAt": new Date() 
-        o.db.insert o.doc,(e,r)->
+        o.db.insert o2.doc,(e,r)->
           cb e,r
       else
         # update existing temp doc when it exists
-        o.db.update {type:"temp",id:JSON.parse(o.doc.id)},{$set:o.doc},{multi:false},cb
+        o.db.update {type:"temp",id:cleanID(o.doc.id)},{$set:o.doc},{multi:false},cb
   tryrun.run o.query,o,cb
 
 temp.output=(o,cb)->
@@ -801,7 +831,7 @@ routeHandler=(app,db)->
     res.send 200,req.auth.username
   
   app.post "/runsh",(req,res)->
-    mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||"/bin/sh"),cwd:(req.body.cwd||"./")},(e,r)->
+    mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||null),cwd:(req.body.cwd||"./")},(e,r)->
       if e
         res.send 404,e.message
       else
