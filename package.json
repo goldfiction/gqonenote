@@ -21,9 +21,9 @@
     "typescript": "4.3.5"
   },
   "devDependencies": {
-    "@mcmath/coffeelint-config": "1.0.1",
-    "coffee-script": "1.12.7",
-    "coffeelint": "2.1.0",
+    //"@mcmath/coffeelint-config": "1.0.1",
+    //"coffee-script": "1.12.7",
+    //"coffeelint": "2.1.0",
     "coffeescript": "2.7.0",
     "gqtest": "^0.0.22",
     "nodemon": "3.1.10"
