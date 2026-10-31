@@ -1,0 +1,8 @@
+echo alias loaded...
+alias docommit="git status; IFS= read -r line ; git add . ; git commit -m \"update\" ; git push nodegit master ; git push github master ; echo all done!"
+alias dorun="node --require coffeescript/register index.coffee"
+alias dowatch="node --watch-preserve-output --watch --watch-path=./public/www/js --watch-path=./src --require coffeescript/register index.coffee"
+alias runwatch="npm run-script run:watch"
+alias doinst="npm install  --prefer-offline  --no-audit  --no-bin-links"
+alias echotest="echo echotest"
+

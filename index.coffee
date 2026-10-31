@@ -1,3 +1,8 @@
+#!coffeescript
+# index.coffee
+# glidev5  @copyright 201610
+# 
+
 gqexpress=require "gqexpress" 
 l=log=console.log 
 Datastore=require 'nedb'

@@ -1,3 +1,8 @@
+#!coffeescript
+# api.coffee
+# glidev5 @copyright 202610
+# 
+
 # schemas
 #---
 # index

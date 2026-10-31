@@ -1,9 +1,7 @@
-// vvTODO: project crud
-// vvTODO: section crud
-// vvTODO: page crud
-// vvTODO: note crud
-// vvTODO: noteText crud
-// 
+// #javascript
+// #custom.js
+// # glidev5 @copyright 202610
+// # v0.2.1
 
 l = console.log
 n = null
