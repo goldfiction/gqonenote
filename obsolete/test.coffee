@@ -1,13 +1,22 @@
 q=require  # use this to reference q
 
-a=q './app.coffee'  # use this line to reference app
-b=q './api.coffee'  # api for server
-t=q 'gqtest'  # use this line to reference gqtest
+a=q "./app.coffee"  # use this line to reference app
+b=q "./api.coffee"  # api for server
+t=q "gqtest"  # use this line to reference gqtest
 x=q("child_process").exec
+fs=q "fs"
+ini=q "ini"
+
+# load config
+config={}
+try
+  config=ini.parse(fs.readFileSync("./config.ini").toString())
+catch e
 
 console.log "loading db..."
-Datastore=require 'nedb'
-db = new Datastore({ filename: '/root/db', autoload: true })
+Datastore=require "nedb"
+db = new Datastore({ filename: config.server.db||"/root/db", autoload: true })
+db.ensureIndex {fieldName:"_id",unique:true}
 console.log "db loaded..."
 
 f=t.it  # this is done
@@ -17,7 +26,7 @@ g=t.doRun  # this is doRun
 n=null
 u=undefined
 l=console.log
-er=console.error
+err=console.error
 
 getRandomInt=(min,max)->
   Math.floor(Math.random() * (max - min + 1)) + min
