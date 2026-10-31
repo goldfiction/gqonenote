@@ -19,7 +19,7 @@ block content
                         p.inblock Language:
                         select(name="language",id="languages")
         .row
-            .col-xs-12.col-md-2
+            #sidebar.col-xs-12.col-md-2
                 .border
                     div.inblock
                         p.inblock Section
@@ -47,8 +47,10 @@ block content
                         button#saveAsNote.btn.btn-secondary(type="button") [Save As]
                         button#duplicateNote.btn.btn-secondary(type="button") [Duplicate]
                     div.inblock.wide#notes
-            .col-xs-12.col-md-10
+            #mainbar.col-xs-12.col-md-10
                 ul.nav.nav-tabs#tabContent
+                    li.nav-item
+                        a#expand.btn(href="#") <<
                     li.nav-item
                         a#HTMLPageNav.btn(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="true") HTML
                     li.nav-item
@@ -56,9 +58,9 @@ block content
                     li.nav-item
                         a#saveNoteNav(href="#") Save
                     li.nav-item
-                        a#dbSize(href="#") Size 
+                        a#dbSize(href="#") Size
                     li.nav-item
-                        a#notePath(href="#") 
+                        a#notePath(href="#")
                     li.nav-item
                         a#run.btn(href="#") Run
                 ul.nav.nav-tabs#tabContent2.fade.d-none.hide

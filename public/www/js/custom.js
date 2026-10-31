@@ -7,6 +7,9 @@
 
 l = console.log
 n = null
+nf = function(e,r){
+  if(e) l(e);
+}
 
 project = {}
 section = {}
@@ -19,14 +22,14 @@ section.selected = n
 page.selected = n
 note.selected = n
 inputBox.hide = function () {
-    $("#popupInputBox").addClass("fade")
+    $("#popupInputBox").addClass("fade");
 }
 inputBox.show = function () {
-    $("#popupInputBox").removeClass("fade")
+    $("#popupInputBox").removeClass("fade");
 }
 
 function maxEditor() { 
-    $('#editor').addClass("ace_fullscreen")
+    $('#editor').addClass("ace_fullscreen");
 }
 
 function resetEditor() {
@@ -35,35 +38,88 @@ function resetEditor() {
     } catch (e) { }
 }
 
+function maxIframe() { 
+    $('.iframe').addClass("ace_fullscreen");
+}
+
+function resetIframe() {
+    try {
+        $(".iframe").removeClass("ace_fullscreen");
+    } catch (e) { }
+}
+
 function toggleFullScreen() {
     if ($("#editor").hasClass("ace_fullscreen")) {
-        resetEditor()
+        resetEditor();
     } else { 
-        maxEditor()
+        maxEditor();
     }
 }
 
+function toggleIframe() {
+    if ($(".iframe").hasClass("ace_fullscreen")) {
+        resetIframe();
+    } else { 
+        maxIframe();
+    }
+
+}
+
+function attachIframeFullscreen(){
+    $(document).on('keydown', function(e) {
+        // Check if Alt + Enter is pressed
+        if (e.altKey && e.key === 'Enter') {
+            e.preventDefault();
+            
+            // Target your iframe (change the selector if needed)
+            var iframe = $('iframe')[0]; 
+            
+            if (!iframe) return;
+
+            // Toggle fullscreen
+            if (!document.fullscreenElement) {
+                if (iframe.requestFullscreen) {
+                    iframe.requestFullscreen();
+                } else if (iframe.webkitRequestFullscreen) { /* Safari */
+                    iframe.webkitRequestFullscreen();
+                } else if (iframe.msRequestFullscreen) { /* IE11 */
+                    iframe.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+    });
+}
+
 function showalert(text){
-    $("#alertpopout").html("<pre>"+text+"</pre>")
-    $("#alertpopout").fadeIn()
+    $("#alertpopout").html("<pre>"+text+"</pre>");
+    $("#alertpopout").fadeIn();
     setTimeout(function(){
-        $("#alertpopout").fadeOut()
-    },15000)
+        $("#alertpopout").fadeOut();
+    },15000);
 }
 
 function motd(text){
-    $("#motd").html("<pre>"+text+"</pre>")
-    $("#motd").fadeIn()
+    $("#motd").html("<pre>"+text+"</pre>");
+    $("#motd").fadeIn();
     setTimeout(function(){
-        $("#motd").fadeOut()
-    },4000)
+        $("#motd").fadeOut();
+    },4000);
 }
 
 function cleanID(id) {
+    id2=id
     try {
-        id=JSON.parse(proj)
+        id2=JSON.parse(id);
     } catch (e) { }
-    return id
+    return id2
 }
 
 function wget(url) {
@@ -73,8 +129,8 @@ function wget(url) {
         data: {},
         dataType: 'text', 
         success: function (response) {
-            l(response)
-            showalert(response)
+            l(response);
+            showalert(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -90,8 +146,8 @@ function wpost(url, data = {}) {
         data: data,
         dataType: 'text', 
         success: function (response) {
-            l(response)
-            showalert(response)
+            l(response);
+            showalert(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -105,30 +161,29 @@ function wpost(url, data = {}) {
 // input:o.method
 // input:o.data
 
-function wajax(o = {},cb) {
+function wajax(o = {},cb=nf) {
     $.ajax({
         url: o.url||"/",
         type: o.method||"GET",
         data: o.data || {},
         dataType: 'json', 
         success: function (response) {
-            l(response)
-            showalert(response)
-            cb(null,response)
+            l(response);
+            showalert(response);
+            cb(null,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
     return url
 }
 
-
 function attachControlKey(id="") {
-    //chromeErrorHandler2()
+    //chromeErrorHandler2();
     var editor = ace.edit("editor" + id);
-    var currentFontSize = editor.getFontSize()
+    var currentFontSize = editor.getFontSize();
     $("#editor" + id).keydown(function (event) {
         // Check if Ctrl key is pressed and the key is 'c' or 'C'
         if (event.ctrlKey && (event.key === '=' || event.key === '+')) {
@@ -148,23 +203,23 @@ function attachControlKey(id="") {
         } else if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
             event.preventDefault(); // Prevent the default copy action if needed
             console.log("Ctrl+s was pressed!");
-            note.text()
-            //saveFile(id)
+            note.text();
+            //saveFile(id);
         } else if (event.ctrlKey && (event.key === 'r' || event.key === 'R')) {
             event.preventDefault();
             console.log("Ctrl+r was pressed!");
-            //console.log("id is: "+id)
-            //resetEditorPosition(id)
+            //console.log("id is: "+id);
+            //resetEditorPosition(id);
         } else if (event.altKey && event.key === "Enter") {
             event.preventDefault();
             //console.log("Alt+Enter was pressed!");
-            //console.log("id is: " + id)
-            toggleFullScreen(id)
+            //console.log("id is: " + id);
+            toggleFullScreen(id);
         }
     });
 }
 
-project.size = function () {
+project.size = function (cb=nf) {
     $.ajax({
         url: '/size',
         type: 'GET',
@@ -172,16 +227,17 @@ project.size = function () {
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            alert("db size: "+response+" bytes")
+            alert("db size: "+response+" bytes");
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-project.runsh = function (script,shell=null,cb) {
+project.runsh = function (script,shell=null,cb=nf) {
     $.ajax({
         url: '/runsh',
         type: 'POST',
@@ -189,17 +245,20 @@ project.runsh = function (script,shell=null,cb) {
         dataType: 'text', 
         success: function(response) {
             l('successful:', response);
-            showalert(response)
-            cb(n,response)
+            showalert(response);
+            cb(n,response);
         },
         error: function(xhr, status, error) {
-            l('failed:', error);
-            cb(error)
+            //l('failed:', error);
+            //l(xhr)
+            //l(status)
+            showalert(xhr.responseText.split("<br>")[0].trim())
+            cb(error);
         }
     });
 }
 
-project.motd = function (cb) {
+project.motd = function (cb=nf) {
     $.ajax({
         url: '/motd',
         type: 'GET',
@@ -207,17 +266,17 @@ project.motd = function (cb) {
         dataType: 'text', 
         success: function(response) {
             //l('get select id successful:', response);
-            motd(response)
-            cb(n,response)
+            motd(response);
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });    
 }
 
-project.getSelectID = function (cb) {
+project.getSelectID = function (cb=nf) {
     $.ajax({
         url: '/select',
         type: 'GET',
@@ -225,17 +284,17 @@ project.getSelectID = function (cb) {
         dataType: 'json', 
         success: function(response) {
             //l('get select id successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });    
 }
 
-project.setSelectID = function (doc) {
-    //l(doc)
+project.setSelectID = function (doc,cb=nf) {
+    //l(doc);
     $.ajax({
         url: '/select',
         type: 'PUT',
@@ -252,59 +311,59 @@ project.setSelectID = function (doc) {
 
 selectTheme = function (theme="monokai") {
     editor.setTheme("ace/theme/" + theme);
-    project.setSelectID({theme:theme})
+    project.setSelectID({theme:theme});
 }
 
 project.appendTheme = function (themes) {
     themes.sort((a, b) => a.localeCompare(b));
     themes.forEach(element => {
-        element=element.replace(".css", "")
+        element=element.replace(".css", "");
         $("#themes").append(new Option(element, element));
     });
     $("#themes").on("change", function (event) {
-        project.selectedTheme = $("#themes").val()
-        selectTheme(project.selectedTheme)
-        l("setting to theme: "+project.selectedTheme)
-    })
+        project.selectedTheme = $("#themes").val();
+        selectTheme(project.selectedTheme);
+        l("setting to theme: "+project.selectedTheme);
+    });
     project.getSelectID(function (e,response) {
         try {
             project.selectedTheme=response.theme||"monokai"
-            $("#themes").val(project.selectedTheme).change()
+            $("#themes").val(project.selectedTheme).change();
         } catch (e) {
-            l(e)
+            l(e);
         }
-    })
+    });
 }
 
 selectLanguage = function (lang = "javascript") {
-    l("setting to language:",lang)
-    editor.getSession().setMode("ace/mode/"+lang)
-    project.setSelectID({language:lang})
+    l("setting to language:",lang);
+    editor.getSession().setMode("ace/mode/"+lang);
+    project.setSelectID({language:lang});
 }
 
 project.appendLanguage = function (langs) {
     langs.sort((a, b) => a.localeCompare(b));
     langs.forEach(element => {
-        element = element.replace(".js", "")
-        element=element.replace("mode-", "")
+        element = element.replace(".js", "");
+        element=element.replace("mode-", "");
         $("#languages").append(new Option(element, element));
     });
     $("#languages").on("change", function (event) {
-        project.selectedLanguage = $("#languages").val()
-        selectLanguage(project.selectedLanguage)
-    })
+        project.selectedLanguage = $("#languages").val();
+        selectLanguage(project.selectedLanguage);
+    });
     project.getSelectID(function (e,response) {
         try {
             project.selectedLanguage=response.language||"javascript"
-            $("#languages").val(project.selectedLanguage).change()
+            $("#languages").val(project.selectedLanguage).change();
         } catch (e) {
-            l(e)
+            l(e);
         }
-    })
- }
+    });
+}
 
-project.listTheme = function (editor) {
-    $("#themes").empty()
+project.listTheme = function (editor,cb=nf) {
+    $("#themes").empty();
     $.ajax({
         url: '/theme',
         type: 'GET',
@@ -321,8 +380,8 @@ project.listTheme = function (editor) {
     
 }
 
-project.listLanguage = function (editor) {
-    $("#languages").empty()
+project.listLanguage = function (editor,cb=nf) {
+    $("#languages").empty();
     $.ajax({
         url: '/language',
         type: 'GET',
@@ -339,7 +398,7 @@ project.listLanguage = function (editor) {
 }
 
 user=n
-project.updateAdminTab = function (cb) {
+project.updateAdminTab = function (cb=nf) {
     $.ajax({
         url: '/user',
         type: 'GET',
@@ -347,46 +406,46 @@ project.updateAdminTab = function (cb) {
         dataType: 'text', 
         success: function (response) {
             user=response
-            //l(response)
+            //l(response);
             if (response == "admin") {
-                $("#tabContent2").removeClass("fade")
-                $("#tabContent2").removeClass("hide")
-                $("#tabContent2").removeClass("d-none")
-                $("#tabContent2").show()
+                $("#tabContent2").removeClass("fade");
+                $("#tabContent2").removeClass("hide");
+                $("#tabContent2").removeClass("d-none");
+                $("#tabContent2").show();
             }
-            cb()
+            cb();
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
 project.updateList=function(projects){
-    $("#projects").empty()
+    $("#projects").empty();
     projects.sort((a, b) => a.name.localeCompare(b.name));
     projects.forEach(element => {
         $("#projects").append(new Option(element.name, element.id));
     });
     if (user == "admin") {
-        $("#projects").append(new Option("package.json", "package.json"));        
+        $("#projects").append(new Option("package.json", "package.json"));
     }
     $("#projects").append(new Option("temp", "temp"));
     $("#projects").append(new Option("output.log", "output.log")); 
 
-    project.selected = cleanID($("#projects").val())
+    project.selected = cleanID($("#projects").val());
     project.getSelectID(function (e,response) {
-        //l(response)
+        //l(response);
         try {
-            $("#projects").val(cleanID(response.projectID)).trigger('change')                     
+            $("#projects").val(cleanID(response.projectID)).trigger('change');
         } catch (e) {
-            //l(e)
+            //l(e);
         }
-    })        
+    });
 }
 
-project.list=function(){
+project.list=function(cb=nf){
     $.ajax({
         url: '/project',
         type: 'GET',
@@ -402,7 +461,7 @@ project.list=function(){
     });
 }
 
-project.create=function(name,cb){
+project.create=function(name,cb=nf){
     $.ajax({
         url: '/project',
         type: 'POST',
@@ -410,17 +469,19 @@ project.create=function(name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
+            project.selected=cleanID(response.id)
+            project.setSelectID({projectID:project.selected});
             project.updateList(response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-project.remove=function(id,cb){
+project.remove=function(id,cb=nf){
     $.ajax({
         url: '/project',
         type: 'DELETE',
@@ -428,16 +489,16 @@ project.remove=function(id,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-project.rename=function(id,name,cb){
+project.rename=function(id,name,cb=nf){
     $.ajax({
         url: '/project',
         type: 'PUT',
@@ -445,16 +506,16 @@ project.rename=function(id,name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-project.readPackage = function (cb) {
+project.readPackage = function (cb=nf) {
     $.ajax({
         url: '/package',
         type: 'GET',
@@ -462,17 +523,17 @@ project.readPackage = function (cb) {
         dataType: 'text', 
         success: function(response) {
             //l('successful:', response);
-            editor.setValue(response)
-            cb(n, response)
+            editor.setValue(response);
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-project.writePackage = function (cb) {
+project.writePackage = function (cb=nf) {
     $.ajax({
         url: '/package',
         type: 'PUT',
@@ -480,16 +541,16 @@ project.writePackage = function (cb) {
         dataType: 'text', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-project.export = function (cb) {
+project.export = function (cb=nf) {
     $.ajax({
         url: '/project/export',
         type: 'GET',
@@ -497,18 +558,18 @@ project.export = function (cb) {
         dataType: 'text', 
         success: function(response) {
             //l('successful:', response);
-            //editor.setValue(response)
+            //editor.setValue(response);
             showalert("Project exported.")  
-            cb(n, response)
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-project.import = function (cb) {
+project.import = function (cb=nf) {
     $.ajax({
         url: '/project/import',
         type: 'GET',
@@ -516,80 +577,80 @@ project.import = function (cb) {
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            //editor.setValue(response)
+            //editor.setValue(response);
             if (response.status == "OK") {
-                showalert("Project imported.")
-                project.list()        
+                showalert("Project imported.");
+                project.list();
             }
-            cb(n, response)
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-project.stop = function (cb) {
+project.stop = function (cb=nf) {
     $.ajax({
         url: '/server/stop',
         type: 'GET',
         data: {},
         dataType: 'text', 
         success: function(response) {
-            showalert("Server stopped.")
-            cb()
+            showalert("Server stopped.");
+            cb();
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-project.restart = function (cb) {
+project.restart = function (cb=nf) {
     $.ajax({
         url: '/server/restart',
         type: 'GET',
         data: {},
         dataType: 'text', 
         success: function(response) {
-            showalert("Server restarted.")
-            cb()
+            showalert("Server restarted.");
+            cb();
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
 //--
 
-section.updateList=function(sections){
-    $("#sections").html("")
+section.updateList=function(sections,cb=nf){
+    $("#sections").html("");
     sections.sort((a, b) => a.name.localeCompare(b.name));
     sections.forEach(element => {
         $("#sections").append("<div class=\"selector section\" value=\""+element.id+"\">"+element.name+"</div>");
     });
     project.getSelectID(function (e,response) {
         try {
-            $(".section[value='" + JSON.parse(response.sectionID) + "']").trigger("click");                            
+            $(".section[value='" + cleanID(response.sectionID) + "']").trigger("click");
         } catch (e) { }
-    })
+    });
     $(".section").on("click",function(elem){
         try {
-            $('.section[value="'+section.selected+'"]').removeClass("selected")            
+            $('.section[value="'+section.selected+'"]').removeClass("selected");
         } catch (e) { }
         section.selected = elem.target.attributes.value.nodeValue
-        $(this).addClass("selected")
-        //l("selected section: " + section.selected)
-        project.setSelectID({sectionID:section.selected})
-        page.list()
-    })
+        $(this).addClass("selected");
+        //l("selected section: " + section.selected);
+        project.setSelectID({sectionID:section.selected});
+        page.list();
+    });
 }
 
-section.list=function(){
+section.list=function(cb=nf){
     $.ajax({
         url: '/section',
         type: 'GET',
@@ -605,7 +666,7 @@ section.list=function(){
     });
 }
 
-section.create=function(name,cb){
+section.create=function(name,cb=nf){
     $.ajax({
         url: '/section',
         type: 'POST',
@@ -613,16 +674,18 @@ section.create=function(name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            section.selected=cleanID(response.id)
+            project.setSelectID({sectionID:section.selected});
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-section.remove=function(id,cb){
+section.remove=function(id,cb=nf){
     $.ajax({
         url: '/section',
         type: 'DELETE',
@@ -630,16 +693,16 @@ section.remove=function(id,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
 
-section.rename=function(id,name,cb){
+section.rename=function(id,name,cb=nf){
     $.ajax({
         url: '/section',
         type: 'PUT',
@@ -647,11 +710,11 @@ section.rename=function(id,name,cb){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
-            cb(n,response)
+            cb(n,response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     });
 }
@@ -659,26 +722,26 @@ section.rename=function(id,name,cb){
 //--
 
 page.updateList=function(pages){
-    $("#pages").html("")
+    $("#pages").html("");
     pages.sort((a, b) => a.name.localeCompare(b.name));
     pages.forEach(element => {
         $("#pages").append("<div class=\"selector page\" value=\""+element.id+"\">"+element.name+"</div>");
     });
     project.getSelectID(function (e,response) {
         try {
-            $(".page[value='" + JSON.parse(response.pageID) + "']").trigger("click");
+            $(".page[value='" + cleanID(response.pageID) + "']").trigger("click");
          } catch (e){ }
-    })
+    });
     $(".page").on("click",function(elem){
         try {
-            $('.page[value="'+page.selected+'"]').removeClass("selected")            
+            $('.page[value="'+page.selected+'"]').removeClass("selected");
         } catch (e) { }
         page.selected = elem.target.attributes.value.nodeValue
-        $(this).addClass("selected")
-        //l("selected page: " + page.selected)
-        project.setSelectID({pageID:page.selected})
-        note.list()
-    })
+        $(this).addClass("selected");
+        //l("selected page: " + page.selected);
+        project.setSelectID({pageID:page.selected});
+        note.list();
+    });
 }
 
 page.list=function(){
@@ -705,6 +768,8 @@ page.create=function(name){
         dataType: 'json', 
         success: function(response) {
             //l('successful:', response);
+            page.selected=cleanID(response.id)
+            project.setSelectID({pageID:page.selected});
             page.updateList(response);
         },
         error: function(xhr, status, error) {
@@ -746,7 +811,7 @@ page.rename=function(id,name){
 }
 
 //--
-note.getText=function(){
+note.getText=function(cb=nf){
     $.ajax({
         url: '/note/text',
         type: 'GET',
@@ -756,17 +821,23 @@ note.getText=function(){
             //l('successful:', response);
             if (response.length == 1) {
                 try {
-                    hideEditor=!($("#editorPage").hasClass("active"))
-                    $("#HTMLContent").html(atob(response[0].text))
-                    $("#editorPage").addClass("show")
-                    editor.setValue(atob(response[0].text))
-                    temp.lastContent=editor.getValue()  // update last content upon chooen a new note
+                    $("#editorPage").css("display", "");
+                    $("#editorPage").removeClass("hide");
+                    $("#editorPage").addClass("show");
+                    hideEditor=!($("#editorPage").hasClass("active"));
+                    content=atob(response[0].text)
+                    $("#HTMLContent").html(content);
+                    editor.setValue(content);
+                    temp.lastContent=content  // update last content upon chooen a new note
+                    attachEnterKeyCMD()
                     editor.renderer.updateFull();
                     if (hideEditor) {
-                        $("#editorPage").removeClass("show")
+                        $("#editorPage").removeClass("show");
+                        $("#editorPage").addClass("hide");
                     }
                 } catch (e) {
-                    editor.setValue("")
+                    editor.setValue("");
+                    console.log(e)
                 }
             }
         },
@@ -777,28 +848,28 @@ note.getText=function(){
 }
 
 note.updateList=function(notes){
-    $("#notes").html("")
+    $("#notes").html("");
     notes.sort((a, b) => a.name.localeCompare(b.name));
     notes.forEach(element => {
         $("#notes").append("<div class=\"selector note\" value=\""+element.id+"\">"+element.name+"</div>");
     });
-    //project.getSelectID(function (e,response) {
-    //    try {
-    //        $(".note[value='" + JSON.parse(response.noteID) + "']").trigger("click");
-    //    } catch (e) { }
-    //})
+    project.getSelectID(function (e,response) {
+        try {
+            $(".note[value='" + cleanID(response.noteID) + "']").trigger("click");
+        } catch (e) { }
+    });
     $(".note").on("click",function(elem){
         try {
-            $('.note[value="'+note.selected+'"]').removeClass("selected")            
+            $('.note[value="'+note.selected+'"]').removeClass("selected");
         } catch (e) { }
         note.selected = elem.target.attributes.value.nodeValue
-        $(this).addClass("selected")
-        //l("selected note: " + note.selected)
-        project.setSelectID({noteID:note.selected})
-        note.getText()
-        note.path()
-        //editor.setValue(notes.filter((elem) => {return elem.id==JSON.parse(note.selected)}).text||"")
-    })
+        $(this).addClass("selected");
+        //l("selected note: " + note.selected);
+        project.setSelectID({noteID:note.selected});
+        note.getText();
+        note.path(function(e,r){});
+        //editor.setValue(notes.filter((elem) => {return elem.id==cleanID(note.selected)}).text||"");
+    });
 }
 
 note.list=function(){
@@ -809,7 +880,7 @@ note.list=function(){
         dataType: 'json', 
         success: function(response) {
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -825,7 +896,7 @@ note.listAll=function(){
         dataType: 'json', 
         success: function(response) {
             l('successful:',response);
-            //note.updateList(response)
+            //note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -840,8 +911,10 @@ note.create=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:name},
         dataType: 'json', 
         success: function(response) {
+            note.selected=cleanID(response.id)
+            project.setSelectID({noteID:note.selected});
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -856,8 +929,9 @@ note.saveas=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:name,text:btoa(editor.getValue())},
         dataType: 'json', 
         success: function(response) {
+            note.selected=cleanID(response.id)
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -872,8 +946,9 @@ note.duplicate=function(name){
         data: {project:project.selected,section:section.selected,page:page.selected,name:"copy of "+name,text:btoa(editor.getValue())},
         dataType: 'json', 
         success: function(response) {
+            note.selected=cleanID(response.id)
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -889,7 +964,7 @@ note.remove=function(id){
         dataType: 'json', 
         success: function(response) {
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -905,7 +980,7 @@ note.rename=function(id,name){
         dataType: 'json', 
         success: function(response) {
             //l('successful:',response);
-            note.updateList(response)
+            note.updateList(response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
@@ -919,9 +994,9 @@ note.text = function () {
             if (e) {
                 l('failed:', e);
             } else {
-                showalert("Note saved.")                
+                showalert("Note saved.");
             }
-        })
+        });
     } else {
         $.ajax({
             url: '/note/text',
@@ -930,7 +1005,7 @@ note.text = function () {
             dataType: 'json', 
             success: function(response) {
                 //l('successful:',response);
-                showalert("Note saved.")
+                showalert("Note saved.");
             },
             error: function(xhr, status, error) {
                 l('failed:', error);
@@ -940,7 +1015,7 @@ note.text = function () {
     }
 }
 
-note.path = function () {
+note.path = function (cb=nf) {
     $.ajax({
         url: '/note/path',
         type: 'GET',
@@ -948,19 +1023,18 @@ note.path = function () {
         dataType: 'text', 
         success: function(response) {
             //l('successful:', response);
-            //alert("db size: "+response+" bytes")
-            $("#notePath").html("xpath: "+response)
+            $("#notePath").html("xpath: "+response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            //cb(error)
+            cb(error);
         }
     });
 }
 
 //--
 
-temp.save = function (cb) {
+temp.save = function (cb=nf) {
     $.ajax({
         url: '/temp',
         type: 'POST',
@@ -968,25 +1042,25 @@ temp.save = function (cb) {
         dataType: 'text', 
         success: function(response) {
             showalert("Temp file backed up.")  
-            cb(n, response)
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
 temp.lastContent=n
-temp.deposit = function (cb) {
-    temp.currentContent = editor.getValue()
+temp.deposit = function () {
+    temp.currentContent = editor.getValue();
     if (temp.lastContent != temp.currentContent) {
-        temp.save(cb)
+        temp.save(nf);
         temp.lastContent=temp.currentContent
     }
 }
 
-temp.get = function (cb) {
+temp.get = function (cb=nf) {
     $.ajax({
         url: '/temp',
         type: 'GET',
@@ -994,57 +1068,57 @@ temp.get = function (cb) {
         dataType: 'json', 
         success: function(response) {
             if (response.status == "OK") {
-                showalert("Temp file retrieved.")
-                l(response)
+                showalert("Temp file retrieved.");
+                l(response);
             }
-            cb(n, response)
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
 
-temp.retrieve = function (cb) {
+temp.retrieve = function (cb=nf) {
     temp.get(function (e, r) {
-        //l(r)
+        //l(r);
         if (!e&&r.length) {
-            editor.setValue(atob(r[0].text))
-            temp.lastContent=editor.getValue()
+            editor.setValue(atob(r[0].text));
+            temp.lastContent=editor.getValue();
         }
-        cb()
-    })
+        cb();
+    });
 }
 
 temp.period = function () {
     temp.intervalTicker=setInterval(function () {
-        temp.deposit(function (e,r) { })
-    },60*1000*10)
+        temp.deposit();
+    },60*1000*10);
 }
 
 temp.timeout = function () {
     temp.timeoutTicker=setTimeout(function () {
-        temp.period()
-    },60*1000*10)
+        temp.period();
+    },60*1000*10);
 }
 
-temp.retrieveLog = function (cb) {
+temp.retrieveLog = function (cb=nf) {
     $.ajax({
         url: '/output',
         type: 'GET',
         data: {},
         dataType: 'json', 
         success: function(response) {
-            showalert("output.log retrieved.")
-            //l(response)
-            editor.setValue(response.text)
-            temp.lastContent=editor.getValue()
-            cb(n, response)
+            showalert("output.log retrieved.");
+            //l(response);
+            editor.setValue(response.text);
+            temp.lastContent=editor.getValue();
+            cb(n, response);
         },
         error: function(xhr, status, error) {
             l('failed:', error);
-            cb(error)
+            cb(error);
         }
     }); 
 }
@@ -1082,28 +1156,29 @@ function runClock() {
 }
 
 initClock = function () {
-    $("#statusBar").append("<div id='clock2'></div>")
+    $("#statusBar").append("<div id='clock2'></div>");
     setInterval(runClock, 300);
 }
 
 initCmdline = function () {
-    $("#statusBar").append("<div id='cmdline2'></div>")
-    $("#cmdline2").append("<input id='cmdlineInput' type='text'></input>")
+    $("#statusBar").append("<div id='cmdline2'></div>");
+    $("#cmdline2").append("<label>CMD: </label><input id='cmdlineInput' type='text'></input>");
+    attachEnterKeyCMD()
 }
 
 //--
 inputStatus = n;
 
-confirmDialog = function (o, cb) {
-    $("#popupConfirmBox").removeClass("fade")
+confirmDialog = function (o, cb=nf) {
+    $("#popupConfirmBox").removeClass("fade");
     $("#confirmYesBtn").on("click", function (elem) {
-        $("#popupConfirmBox").addClass("fade")
-        cb(null,true)
-    })
+        $("#popupConfirmBox").addClass("fade");
+        cb(null,true);
+    });
     $("#confirmNoBtn").on("click", function (elem) {
-        $("#popupConfirmBox").addClass("fade")
-        cb(null,false)
-    })
+        $("#popupConfirmBox").addClass("fade");
+        cb(null,false);
+    });
 }
 
 attachEnterKey = function () {
@@ -1111,7 +1186,17 @@ attachEnterKey = function () {
     $('#popupInput').on('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault(); // Stop standard browser submit
-            $("#submitBtn").click()
+            $("#submitBtn").click();
+        }
+    });
+}
+
+attachEnterKeyCMD = function () {
+    $('#cmdline2').on('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Stop standard browser submit
+            script = $("#cmdlineInput").val();
+            project.runsh(script,"sh");
         }
     });
 }
@@ -1119,35 +1204,39 @@ attachEnterKey = function () {
 initOnEvent=function(){
     $('#projects').on('change', function () {
         if ($("#projects").val().toLowerCase() == "package.json") {
-            project.selected = $("#projects").val()
-            project.setSelectID({projectID:project.selected})
-            project.readPackage(function (e,r) { })
+            project.selected = $("#projects").val();
+            project.setSelectID({projectID:project.selected});
+            project.readPackage(function (e,r) { });
         } else if ($("#projects").val().toLowerCase() == "temp") {
-            temp.retrieve(function (e,r) { })
+            project.selected = $("#projects").val();
+            project.setSelectID({projectID:project.selected});
+            temp.retrieve(function (e,r) { });
         } else if ($("#projects").val().toLowerCase() == "output.log") {
-            temp.retrieveLog(function (e,r) { })
+            project.selected = $("#projects").val();
+            project.setSelectID({projectID:project.selected});
+            temp.retrieveLog(function (e,r) { });
         } else {
-            project.selected = JSON.parse($("#projects").val())
-            project.setSelectID({projectID:project.selected})
-            section.list()
+            project.selected = cleanID($("#projects").val());
+            project.setSelectID({projectID:project.selected});
+            section.list();
         }
     });
 
     $("#saveNoteNav").on("click", function (elem) {
-        note.text()
-    })
+        note.text();
+    });
 
     $("#dbSize").on("click", function (elem) {
-        project.size()
-    })
+        project.size();
+    });
 
     $(".btn").on("click", function (elem) {
-        //l(elem)
+        //l(elem);
         if (elem.target.id == "addProject") {
-            //l("addProject!")
+            //l("addProject!");
             inputStatus="addProject"
-            $("#popupInputBox").removeClass("fade")
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            attachEnterKey();
         }
         else if (elem.target.id == "removeProject") {
             confirmDialog({}, function (e, choice) {
@@ -1156,52 +1245,52 @@ initOnEvent=function(){
                         if (!e) {
                             project.updateList(response);
                         }
-                    })                    
+                    });
                 }
-            })
+            });
         }
         else if (elem.target.id == "editProject") {
             inputStatus = "editProject"
-            $("#popupInputBox").removeClass("fade")
-            attachEnterKey()
-            $("#popupInput").val($("#projects option:selected").text())
+            $("#popupInputBox").removeClass("fade");
+            attachEnterKey();
+            $("#popupInput").val($("#projects option:selected").text());
         }
         else if (elem.target.id == "refreshProject") {
-            $("#projects").trigger('change')
+            $("#projects").trigger('change');
         }
         else if (elem.target.id == "export") {
-            project.export(function (e,r) { })
+            project.export(function (e,r) { });
         }
         else if (elem.target.id == "import") {
-            project.import(function (e,r) { })
+            project.import(function (e,r) { });
         }
         //--
         else if (elem.target.id == "addSection") {
             inputStatus="addSection"
-            $("#popupInputBox").removeClass("fade")
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            attachEnterKey();
         }
         else if (elem.target.id == "removeSection") {
             confirmDialog({}, function (e, choice) {
                 if (choice) {
                     section.remove(section.selected, function (e, response) {
                         if (!e) {
-                            section.list()
+                            section.list();
                         }
-                    })
+                    });
                 }
-            })
+            });
         }
         else if (elem.target.id == "editSection") {
             inputStatus="editSection"
-            $("#popupInputBox").removeClass("fade")
-            $("#popupInput").val($(".section.selected").text())
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            $("#popupInput").val($(".section.selected").text());
+            attachEnterKey();
         }
         //--
         else if (elem.target.id == "addPage") {
-            $("#popupInputBox").removeClass("fade")
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            attachEnterKey();
             inputStatus="addPage"
         }
         else if (elem.target.id == "removePage") {
@@ -1209,179 +1298,197 @@ initOnEvent=function(){
                 if (choice) {
                     page.remove(page.selected, function (e, response) {
                         if (!e) {
-                            page.list()
+                            page.list();
                         }
-                    })
+                    });
                 }
-            })
+            });
         }
         else if (elem.target.id == "editPage") {
             inputStatus = "editPage"
-            $("#popupInputBox").removeClass("fade")
-            $("#popupInput").val($(".page.selected").text())
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            $("#popupInput").val($(".page.selected").text());
+            attachEnterKey();
         }
         //--
         else if (elem.target.id == "addNote") {
             inputStatus="addNote"
-            $("#popupInputBox").removeClass("fade")
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            attachEnterKey();
         }
         else if (elem.target.id == "removeNote") {
             confirmDialog({}, function (e, choice) {
                 if (choice) {
                     note.remove(note.selected, function (e, response) {
                         if (!e) {
-                            note.list()
+                            note.list();
                         }
-                    })
+                    });
                 }
-            })
+            });
         }
         else if (elem.target.id == "editNote") {
             inputStatus = "editNote"
-            $("#popupInputBox").removeClass("fade")
-            $("#popupInput").val($(".note.selected").text())
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            $("#popupInput").val($(".note.selected").text());
+            attachEnterKey();
         }
         else if (elem.target.id == "saveNote") {
-            note.text()
+            note.text();
         }
         else if (elem.target.id == "saveAsNote") {
             inputStatus = "saveAsNote"
-            $("#popupInputBox").removeClass("fade")
-            $("#popupInput").val($(".note.selected").text())
-            attachEnterKey()
+            $("#popupInputBox").removeClass("fade");
+            $("#popupInput").val($(".note.selected").text());
+            attachEnterKey();
         }
         else if (elem.target.id == "duplicateNote") {
             note.duplicate($(".note[value='"+note.selected+"']").text(), $("#popupInput").val(), function (e, response) {
-                $("#popupInput").val("")
+                $("#popupInput").val("");
                 if (!e) {
-                    note.list()
+                    note.list();
                 }
-            })
+            });
         }
         //--
         else if (elem.target.id == "cancelBtn") {
-            $("#popupInput").val("")
-            $("#popupInputBox").addClass("fade")
+            $("#popupInput").val("");
+            $("#popupInputBox").addClass("fade");
         }
         else if (elem.target.id == "run") {
-            script = editor.getValue()
-            project.runsh(script,null,function (e,r) { })
+            script = editor.getValue();
+            project.runsh(script);
         }
         else if (elem.target.id == "stop") {
-            project.stop(function (e,r) { })
+            project.stop(function (e,r) { });
         }
         else if (elem.target.id == "restart") {
-            project.restart(function (e,r) { })
+            project.restart(function (e,r) { });
         }
         else if (elem.target.id == "HTMLPageNav") {
-            $("#editorPage").removeClass("active")
-            $("#editorPage").removeClass("show")
+            $("#editorPage").removeClass("active");
+            $("#editorPage").removeClass("show");
+            $("#editorPage").addClass("hide");
+        }
+        else if (elem.target.id == "expand") {
+            if($("#mainbar").hasClass("col-md-10")){
+                $("#sidebar").addClass("hide")
+                $("#mainbar").removeClass("col-md-10")
+                $("#mainbar").addClass("col-md-12")
+                $("#expand").text(">>")
+            }else{
+                $("#sidebar").removeClass("hide")
+                $("#mainbar").removeClass("col-md-12")
+                $("#mainbar").addClass("col-md-10")
+                $("#expand").text("<<")
+            }
+        }
+        else if (elem.target.id == "fullIframe") {
+            toggleIframe()
         }
         else if (elem.target.id == "submitBtn") {
             //--
             if (inputStatus == "addProject") {
-                projectName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                projectName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 project.create(projectName, function (e, response) {
-                    $("#popupInput").val("")
-                })
+                    $("#popupInput").val("");
+                });
             } else if (inputStatus == "editProject") {
-                projectName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                projectName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 project.rename(project.selected, projectName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        project.updateList(response)                        
+                        project.updateList(response);
                     }
-                })
+                });
                 //--
             } else if (inputStatus == "addSection") {
-                sectionName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                sectionName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 section.create(sectionName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        section.list()
+                        section.list();
                     }
-                })
+                });
             } else if (inputStatus == "editSection") {
-                sectionName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                sectionName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 section.rename(section.selected,sectionName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        section.list()
+                        section.list();
                     }
-                })
+                });
                 //--
             } else if (inputStatus == "addPage") {
-                pageName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                pageName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 page.create(pageName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        page.list()
+                        page.list();
                     }
-                })
+                });
             } else if (inputStatus == "editPage") {
-                pageName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                pageName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 page.rename(page.selected, pageName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        page.list()
+                        page.list();
                     }
-                })
+                });
                 //--
             } else if (inputStatus == "addNote") {
-                noteName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                noteName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 note.create(noteName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        note.list()
+                        note.list();
                     }
-                })
+                });
             } else if (inputStatus == "editNote") {
-                noteName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                noteName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 note.rename(note.selected, noteName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        note.list()
+                        note.list();
                     }
-                })
+                });
             } else if (inputStatus == "saveAsNote") {
-                noteName=$("#popupInput").val()
-                $("#popupInputBox").addClass("fade")
+                noteName=$("#popupInput").val();
+                $("#popupInputBox").addClass("fade");
                 note.saveas(noteName, function (e, response) {
-                    $("#popupInput").val("")
+                    $("#popupInput").val("");
                     if (!e) {
-                        note.list()
+                        note.list();
                     }
-                })
+                });
             }
 
         }
-    })
+    });
 
 }
 //--
 
 $(document).ready(function () {
-    project.motd(function (e, r) { })
-    initOnEvent()
+    project.motd(function (e, r) { });
+    initOnEvent();
     project.updateAdminTab(function (e, r) {
-        project.list()        
-    })
-    project.listTheme()
-    project.listLanguage()
-    attachControlKey("")
-    //note.listAll()
-    initClock()
-    initCmdline()
-    temp.timeout()
+        project.list();
+    });
+    project.listTheme();
+    project.listLanguage();
+    attachControlKey("");
+    //note.listAll();
+    initClock();
+    initCmdline();
+    attachIframeFullscreen();
+    temp.timeout();
 });

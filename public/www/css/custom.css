@@ -112,9 +112,11 @@ body {
 .alert{
     display:none;
     width:400px;
+    max-height:400px;
     right:20px;
     bottom:20px;
     font-size:10px;
+    overflow:auto;
     /*word-break: break-all;
     overflow-wrap: break-word;*/
 }
@@ -127,6 +129,7 @@ body {
     font-size:8px;
     font-family: "Courier New", Courier, monospace;
     opacity:0.8;
+    overflow:none;
 }
 
 body,
@@ -142,10 +145,16 @@ canvas {
 
 #cmdline2{
   float:right;
-  padding-right:300px;
-  width:220px;
+  padding-right:100px;
+  width:420px;
+  display:inline-block;
 }
 
 #cmdlineInput{
     width:220px;
+}
+
+label, input {
+  display: inline-block;
+  vertical-align: middle; /* Aligns them nicely along the same horizontal baseline */
 }

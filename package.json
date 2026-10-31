@@ -18,7 +18,8 @@
     "ini": "5.0.0",
     "nedb": "1.8.0",
     "q": "^1.5.1",
-    "typescript": "4.3.5"
+    "typescript": "4.3.5",
+    "node-iframe":"1.10.0"
   },
   "devDependencies": {
     "coffeescript": "2.7.0",
@@ -38,6 +39,7 @@
     "install:nobin": "npm install --no-bin-links --no-optional --omit=optional --ignore-scripts",
     "install:prod": "npm install --production",
     "install:prod2": "npm install --omit=dev --no-bin-links",
+    "install:nobin2":"npm install  --prefer-offline  --no-audit  --no-bin-links",
     "git": "git add .; git commit -m \"update\"; echo gitted...",
     "git:push": "git push origin master & git push nodegit master & git push bitbucket master & echo pushed...",
     "git:setup": "git config --global user.name \"username\";git config --global user.email \"username@gmail.com\";git branch --set-upstream-to=origin/master master;",
@@ -64,5 +66,5 @@
       }
     ]
   },
-  "note": "1234567"
+  "note": ""
 }

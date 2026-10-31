@@ -54,20 +54,17 @@ if process.argv[2]=="execute"
     api.mod.runSH {db:db,script:script,shell:"coffeescript"},(e,r)->
       if e
         l e
-  #api.mod.runxpath {db:db,xpath:xpath},(e,r)->
-  #  if e
-  #    l e
 else
   # start gqexpress
   gqexpress.startServer  # invoke start server like this 
     config:mainConfig
     set:(app,o)->  # override set object like this 
-      return app  # kindly return app back to startServer with app.sets 
+      app  # kindly return app back to startServer with app.sets 
     use:(app,o)->  # override use object like this 
       app=api.routeHandler app,db
-      app.get "/",(req,res)-> 
+      app.get "/",(req,res)->
         res.render "index",  # you can render jade in /views folder like this 
           title:"gqonenote"  # meta info passed to jade and render using #{title} 
-      return app  # kindly return app back to startServer with app.gets 
+      app  # kindly return app back to startServer with app.gets 
   ,(e,o)-> 
     l "Server started!"  # if you see this, then the server is running correctly.

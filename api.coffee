@@ -59,18 +59,41 @@
 
 ver=1.2
 
-tryrun=require "gqtryrun"
+r=require
+tryrun=r "gqtryrun"
 l=console.log
+err=console.error
+
 n=null
-fs=require "fs"
-path=require "path"
-exec=require("child_process").execSync
-spawn=require('child_process').spawn
-vm=require "vm"
-async=require "async"
-_=require "lodash"
-CoffeeScript=require "coffeescript"
-#LuaState=require("lua-state").LuaState
+u=undefined
+fs=r "fs"
+nf=(e,r)->
+  if e
+    err e
+
+ressend=(res,ctnt)->
+  #if !res.hasHeader('Content-Length')
+  #  res.setHeader 'Content-Length',ctnt.legnth
+  #res.writeHead(200, { 'Content-Type': 'text/plain' });
+  #res.write ctnt
+  #res.end()
+  res.send 200,ctnt
+
+path=r "path"
+exec=r("child_process").execSync
+spawn=r('child_process').spawn
+vm=r "vm"
+async=r "async"
+_=r "lodash"
+CoffeeScript=r "coffeescript"
+nodeiframe=r "node-iframe"
+#createIframe=nodeiframe.createIframe
+#import createIframe from "node-iframe"
+configureResourceControl = nodeiframe.configureResourceControl
+configureResourceControl 
+  safeMode: true 
+  inline: { script: true, link: true }
+  cors: { script: true }
 #---
 
 cleanID=(id)->
@@ -95,7 +118,7 @@ mod.selectTemp=
   "pageID":0
   "noteID":0
 
-mod.getID=(o,cb)->
+mod.getID=(o,cb=nf)->
   o.db.find
     "type":"index"
   ,(e,r)->
@@ -106,10 +129,10 @@ mod.getID=(o,cb)->
       o.db.insert o.doc,(e,r)->
         cb e,r
 
-mod.updateID=(o,cb)->
+mod.updateID=(o,cb=nf)->
   o.db.update {type:'index'},{$set:o.doc},{multi:false},cb
 
-mod.getSelectID=(o,cb)->
+mod.getSelectID=(o,cb=nf)->
   o.db.find
     "type":"select"
   ,(e,r)->
@@ -120,11 +143,11 @@ mod.getSelectID=(o,cb)->
       o.db.insert o.doc,(e,r)->
         cb e,r
 
-mod.updateSelectID=(o,cb)->
+mod.updateSelectID=(o,cb=nf)->
   #l o
   o.db.update {type:'select'},{$set:o.doc},{multi:false},cb
 
-mod.getTheme=(o,cb)->
+mod.getTheme=(o,cb=nf)->
   folderPath="./public/www/ace/css/theme"
   try
     files = fs.readdirSync folderPath
@@ -136,7 +159,7 @@ mod.getTheme=(o,cb)->
     console.error('Error reading folder:',e)
     cb e
 
-mod.getLanguage=(o,cb)->
+mod.getLanguage=(o,cb=nf)->
   folderPath="./public/www/ace/src-min"
   try
     files = fs.readdirSync folderPath
@@ -148,17 +171,6 @@ mod.getLanguage=(o,cb)->
     console.error('Error reading folder:',e)
     cb e
 
-runSH1=(o,cb)->
-  l "trying to execute sh script\n",o.script
-  fs.writeFileSync("./runscript",o.script)
-  exec "npm run-script runscript",(error, stdout, stderr)->
-    if error
-      l "Execution error:",error
-    if stderr
-      l "Shell stderr:",stderr
-    l "Output:\n",stdout
-    cb(error,stdout)
-
 determineShell=(script)->
   try
     firstLine=script.split("\n")[0].trim()
@@ -167,94 +179,8 @@ determineShell=(script)->
   catch e
     return null  
 
-runSH1_2=(o,cb)->
-  o.query=(o,cb)->
-    l "trying to execute sh script\n",o.script
-    fs.writeFileSync("./runscript",o.script)
-    child=null
-    msg=""
-    if o.shell=="/bin/bash"
-      child = spawn 'bash',["./runscript"],{ shell: true, cwd: "./" }
-    else if o.shell=="/bin/sh"
-      child = spawn 'sh',["./runscript"],{ shell: true , cwd: "./"}
-    child.stdout.on 'data',(data)->
-      l "stdout: ",data.toString()
-      msg+=data.toString()
-    child.stderr.on 'data',(data)->
-      l "stderr: ",data.toString()
-    child.on 'close',(code)->
-      l "Child process exited with code ",code
-      cb null,msg
-  tryrun.run o.query,o,cb
-
-runPY=(o,cb)->
-  o.query=(o,cb)->
-    l "trying to execute python script\n",o.script
-    fs.writeFileSync("./runscript",o.script)
-    child=null
-    msg=""
-    child = spawn 'python3.8',["./runscript"],{ shell: true , cwd: "./"}  #change this to python2 if needed
-    child.stdout.on 'data',(data)->
-      l "stdout: ",data.toString()
-      msg+=data.toString()
-    child.stderr.on 'data',(data)->
-      l "stderr: ",data.toString()
-    child.on 'close',(code)->
-      l "Child process exited with code ",code
-      cb null,msg
-  tryrun.run o.query,o,cb
-
-runSH2=(o,cb)->
-  o.query=(o,cb)->
-    child=null
-    msg=""
-    if o.shell=="/bin/bash"
-      child = spawn 'bash',['-c', o.script],{ shell: true, cwd: "./" }
-    else if o.shell=="/bin/sh"
-      child = spawn 'sh',['-c', o.script],{ shell: true , cwd: "./"}
-    child.stdout.on 'data',(data)->
-      l "stdout: ",data.toString()
-      msg+=data.toString()
-    child.stderr.on 'data',(data)->
-      l "stderr: ",data.toString()
-    child.on 'close',(code)->
-      l "Child process exited with code ",code
-      cb null,msg
-  tryrun.run o.query,o,cb
-
-runLua_1=(o,cb)->
-  o.param=o.param||{}
-  lua = new LuaState()
-  #lua.setGlobal("multiplier", 5)  # set variable values
-  for key, value of o.param
-    lua.setGlobal(key, value)
-  try
-    result = lua.eval o.script
-    l("Result from Lua:", result)
-    cb null,result
-  catch e
-    cb e
-  lua.close()
-
-runLua=(o,cb)->
-  o.query=(o,cb)->
-    l "trying to execute lua script\n",o.script
-    fs.writeFileSync("./runscript",o.script)
-    child=null
-    msg=""
-    child = spawn 'lua',["./runscript"],{ shell: true , cwd: "./"}
-    child.stdout.on 'data',(data)->
-      l "stdout: ",data.toString()
-      msg+=data.toString()
-    child.stderr.on 'data',(data)->
-      l "stderr: ",data.toString()
-    child.on 'close',(code)->
-      l "Child process exited with code ",code
-      cb null,msg
-  tryrun.run o.query,o,cb
-
-runGeneric=(o,cb)->
-  o.query=(o,cb)->
+runGeneric=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     #l "trying to execute script with shell: "+o.shell+"\n",o.script
     fs.writeFileSync("./runscript",o.script)
     child=null
@@ -270,11 +196,13 @@ runGeneric=(o,cb)->
       cb null,msg
   tryrun.run o.query,o,cb
 
-mod.runSH=(o,cb)->
+mod.runSH=(o,cb=nf)->
   #l o
   o.shell=o.shell||determineShell(o.script)
+  if !o.shell
+    throw new Error("No shell found for script.")
   l "running script using shell: "+o.shell+"\n",o.script
-  o.query=(o,cb)->
+  o.query=(o,cb=nf)->
     if o.shell=="javascript"
       mod.runOneScript {db:o.db,code:o.script},cb
     else if o.shell=="coffeescript"
@@ -284,11 +212,11 @@ mod.runSH=(o,cb)->
       runGeneric o,cb
   tryrun.run o.query,o,cb
 
-mod.getXpathNote=(o,cb)->
+mod.getXpathNote=(o,cb=nf)->
   result=null
   note.listAll {db:o.db},(e,notes)->
     #l notes
-    async.eachSeries notes,(noteData,cb)->
+    async.eachSeries notes,(noteData,cb=nf)->
       if !result
         #l "processing note: ",noteData
         note.path {db:o.db,doc:noteData},(e,noteXpath)->
@@ -303,7 +231,7 @@ mod.getXpathNote=(o,cb)->
       #l "result: ",result
       cb null,result
 
-mod.runxpath=(o,cb)->
+mod.runxpath=(o,cb=nf)->
   mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
     if noteData
       note.getText {db:o.db,doc:noteData},(e,noteData2)->
@@ -313,7 +241,7 @@ mod.runxpath=(o,cb)->
       l "no note found"
       cb()
 
-mod.getXPathScript=(o,cb)->
+mod.getXPathScript=(o,cb=nf)->
   mod.getXpathNote {db:o.db,xpath:o.xpath},(e,noteData)->
     if noteData
       note.getText {db:o.db,doc:noteData},(e,noteData2)->
@@ -323,7 +251,7 @@ mod.getXPathScript=(o,cb)->
       l "no note found"
       cb()
 
-mod.runOneScript=(o,cb)->
+mod.runOneScript=(o,cb=nf)->
   contextObject=
     o:o
     db:o.db
@@ -356,6 +284,31 @@ mod.restartServer=()->
       process.exit(0)
     ,2000
   tryrun.run o.query,o,(e,r)->
+
+mod.find=(o,cb=nf)->
+  o={}
+  o.query=(o,cb=nf)->
+    o.db.find o.doc.key,cb
+  tryrun.run o.query,o,(e,r)->
+
+mod.update=(o,cb=nf)->
+  o={}
+  o.query=(o,cb=nf)->
+    o.db.update o.doc.key,{$set:o.doc.data},{multi:o.multi||false},cb
+  tryrun.run o.query,o,(e,r)->
+
+mod.remove=(o,cb=nf)->
+  o.query=(o,cb=nf)->
+    o.db.update o.doc.key,{$set:{enabled:false}},{multi:o.multi||false},cb
+  tryrun.run o.query,o,cb
+
+mod.create=(o,cb=nf)->
+  o.query=(o,cb=nf)->
+    o.doc.data.enabled=true
+    o.doc.data.createdAt=new Date()
+    o.db.insert o.doc.data,cb
+  tryrun.run o.query,o,cb
+
 #---
 
 project={}
@@ -364,25 +317,25 @@ page={}
 note={}
 temp={}
 
-project.getID=(o,cb)->
+project.getID=(o,cb=nf)->
   mod.getID o,(e,r)->
     cb e,r.projectID||0
 
-section.getID=(o,cb)->
+section.getID=(o,cb=nf)->
   mod.getID o,(e,r)->
     cb e,r.sectionID||0
 
-page.getID=(o,cb)->
+page.getID=(o,cb=nf)->
   mod.getID o,(e,r)->
     cb e,r.pageID||0
 
-note.getID=(o,cb)->
+note.getID=(o,cb=nf)->
   mod.getID o,(e,r)->
     cb e,r.noteID||0
 
 #---
 
-project.incrementID=(o,cb)->
+project.incrementID=(o,cb=nf)->
   mod.getID o,(e,r)->
     o2={}
     o2.doc={}
@@ -390,20 +343,20 @@ project.incrementID=(o,cb)->
     o2.db=o.db
     mod.updateID o2,cb
 
-project.checkID=(o,id,cb)->
+project.checkID=(o,id,cb=nf)->
   o.db.find {type:"project",id:id},{multi:true},(e,r)->
     cb(n,r.length==0)
 
-project.getNextID=(o,id,cb)->
+project.getNextID=(o,id,cb=nf)->
   project.checkID o,id,(e,r)->
     if(r)
       cb(null,id)
     else
-      project.getNextID(o,id+1,cb)
+      project.getNextID(o,id+1,cb=nf)
 
-project.create=(o,cb)->
+project.create=(o,cb=nf)->
   projectName=o.doc.name||"project"
-  o.query=(o,cb)->
+  o.query=(o,cb=nf)->
     mod.getID o,(e,id)->
       project.getNextID o,id.projectID+1,(e,id)->
         #l o.doc
@@ -421,16 +374,16 @@ project.create=(o,cb)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
-project.list=(o,cb)->
-  o.query=(o,cb)->
+project.list=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find
       type:"project"
       enabled:true
     ,cb
   tryrun.run o.query,o,cb
 
-project.export=(o,cb)->
-  o.query=(o,cb)->
+project.export=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find
       type:"project"
       enabled:true
@@ -452,13 +405,13 @@ project.export=(o,cb)->
             cb(e1||e2||e3||e4,total)
   tryrun.run o.query,o,cb
 
-project.importData=(data,cb)->
+project.importData=(data,cb=nf)->
   o={}
   o.doc=data
   o.db.insert o.doc,cb
 
-project.import=(o,cb)->
-  o.query=(o,cb)->
+project.import=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     data=JSON.parse(fs.readFileSync("./import.json").toString())
     projectData=data.filter(item => item.type == 'project')
     sectionData=data.filter(item => item.type == 'section')
@@ -478,18 +431,18 @@ project.import=(o,cb)->
       l "note imported"
   tryrun.run o.query,o,cb
 
-project.rename=(o,cb)->
-  o.query=(o,cb)->
+project.rename=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"project",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-project.remove=(o,cb)->
-  o.query=(o,cb)->
+project.remove=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"project",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-project.readPackage=(o,cb)->
-  o.query=(o,cb)->
+project.readPackage=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     try
       packageJSON=fs.readFileSync("./package.json").toString()
       cb(null,packageJSON)
@@ -497,8 +450,8 @@ project.readPackage=(o,cb)->
       cb e
   tryrun.run o.query,o,cb
 
-project.writePackage=(o,cb)->
-  o.query=(o,cb)->
+project.writePackage=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     try
       packageJSON=o.doc.text
       if packageJSON
@@ -510,7 +463,7 @@ project.writePackage=(o,cb)->
 
 #---
 
-section.incrementID=(o,cb)->
+section.incrementID=(o,cb=nf)->
   mod.getID o,(e,r)->
     o2={}
     o2.doc={}
@@ -518,19 +471,19 @@ section.incrementID=(o,cb)->
     o2.db=o.db
     mod.updateID o2,cb
 
-section.checkID=(o,id,cb)->
+section.checkID=(o,id,cb=nf)->
   o.db.find {type:"section",id:id},{multi:true},(e,r)->
     cb(n,r.length==0)
 
-section.getNextID=(o,id,cb)->
+section.getNextID=(o,id,cb=nf)->
   section.checkID o,id,(e,r)->
     if(r)
       cb(null,id)
     else
-      section.getNextID(o,id+1,cb)
+      section.getNextID(o,id+1,cb=nf)
 
-section.create=(o,cb)->
-  o.query=(o,cb)->
+section.create=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     mod.getID o,(e,id)->
       section.getNextID o,id.sectionID+1,(e,id)->
         o2={}
@@ -547,8 +500,8 @@ section.create=(o,cb)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
-section.list=(o,cb)->
-  o.query=(o,cb)->
+section.list=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find
       "type":"section"
       "project":cleanID(o.doc.project)
@@ -556,33 +509,33 @@ section.list=(o,cb)->
     ,cb
   tryrun.run o.query,o,cb
 
-section.listAll=(o,cb)->
-  o.query=(o,cb)->
+section.listAll=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find
       "type":"section"
       "project":cleanID(o.doc.project)
     ,cb
   tryrun.run o.query,o,cb
 
-section.rename=(o,cb)->
-  o.query=(o,cb)->
+section.rename=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-section.remove=(o,cb)->
-  o.query=(o,cb)->
+section.remove=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     #l o
     o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-section.enable=(o,cb)->
-  o.query=(o,cb)->
+section.enable=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"section",id:cleanID(o.doc.id)},{$set:{enabled:true}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
 
-page.incrementID=(o,cb)->
+page.incrementID=(o,cb=nf)->
   mod.getID o,(e,r)->
     o2={}
     o2.doc={}
@@ -590,19 +543,19 @@ page.incrementID=(o,cb)->
     o2.db=o.db
     mod.updateID o2,cb
 
-page.checkID=(o,id,cb)->
+page.checkID=(o,id,cb=nf)->
   o.db.find {type:"page",id:id},{multi:true},(e,r)->
     cb(n,r.length==0)
 
-page.getNextID=(o,id,cb)->
+page.getNextID=(o,id,cb=nf)->
   page.checkID o,id,(e,r)->
     if(r)
       cb(null,id)
     else
-      page.getNextID(o,id+1,cb)
+      page.getNextID(o,id+1,cb=nf)
 
-page.create=(o,cb)->
-  o.query=(o,cb)->
+page.create=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     mod.getID o,(e,id)->
       page.getNextID o,id.pageID+1,(e,id)->
         o2={}
@@ -620,8 +573,8 @@ page.create=(o,cb)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
-page.list=(o,cb)->
-  o.query=(o,cb)->
+page.list=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     #l o
     o.db.find
       "type":"page"
@@ -631,8 +584,8 @@ page.list=(o,cb)->
     ,cb
   tryrun.run o.query,o,cb
 
-page.rename=(o,cb)->
-  o.query=(o,cb)->
+page.rename=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update 
       type:"page"
       id:cleanID(o.doc.id)
@@ -641,8 +594,8 @@ page.rename=(o,cb)->
     ,{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-page.remove=(o,cb)->
-  o.query=(o,cb)->
+page.remove=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update 
       type:"page"
       id:cleanID(o.doc.id)
@@ -653,7 +606,7 @@ page.remove=(o,cb)->
 
 #---
 
-note.incrementID=(o,cb)->
+note.incrementID=(o,cb=nf)->
   mod.getID o,(e,r)->
     o2={}
     o2.doc={}
@@ -661,19 +614,19 @@ note.incrementID=(o,cb)->
     o2.db=o.db
     mod.updateID o2,cb
 
-note.checkID=(o,id,cb)->
+note.checkID=(o,id,cb=nf)->
   o.db.find {type:"note",id:id},{multi:true},(e,r)->
     cb(n,r.length==0)
 
-note.getNextID=(o,id,cb)->
+note.getNextID=(o,id,cb=nf)->
   note.checkID o,id,(e,r)->
     if(r)
       cb(null,id)
     else
-      note.getNextID(o,id+1,cb)
+      note.getNextID(o,id+1,cb=nf)
 
-note.create=(o,cb)->
-  o.query=(o,cb)->
+note.create=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     mod.getID o,(e,id)->
       note.getNextID o,id.noteID+1,(e,id)->
         o2={}
@@ -694,8 +647,8 @@ note.create=(o,cb)->
             cb e||e2,r
   tryrun.run o.query,o,cb
 
-note.path=(o,cb)->
-  o.query=(o,cb)->
+note.path=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find {type:"note",id:cleanID(o.doc.id),enabled:true},{multi:false},(e1,noteDoc)->
       l noteDoc
       if noteDoc.length==0
@@ -709,8 +662,8 @@ note.path=(o,cb)->
               cb e1||e2||e3||e4,xpath      
   tryrun.run o.query,o,cb
 
-note.list=(o,cb)->
-  o.query=(o,cb)->
+note.list=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     #l o
     o.db.find
       "type":"note"
@@ -723,8 +676,8 @@ note.list=(o,cb)->
       cb e,r
   tryrun.run o.query,o,cb
 
-note.listAll=(o,cb)->
-  o.query=(o,cb)->
+note.listAll=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     #l o
     o.db.find
       "type":"note"
@@ -734,40 +687,40 @@ note.listAll=(o,cb)->
       cb e,r
   tryrun.run o.query,o,cb
 
-note.rename=(o,cb)->
-  o.query=(o,cb)->
+note.rename=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{name:o.doc.name}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-note.updateTitle=(o,cb)->
-  o.query=(o,cb)->
+note.updateTitle=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{title:o.doc.title}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-note.updateText=(o,cb)->
-  o.query=(o,cb)->
+note.updateText=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{text:o.doc.text}},{multi:false},cb
   tryrun.run o.query,o,cb
 
-note.getText=(o,cb)->
-  o.query=(o,cb)->
+note.getText=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find {type:"note",id:cleanID(o.doc.id),enabled:true},{multi:false},cb
   tryrun.run o.query,o,cb
 
-note.remove=(o,cb)->
-  o.query=(o,cb)->
+note.remove=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.update {type:"note",id:cleanID(o.doc.id)},{$set:{enabled:false}},{multi:false},cb
   tryrun.run o.query,o,cb
 
 #---
 
-temp.get=(o,cb)->
-  o.query=(o,cb)->
+temp.get=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find {type:"temp",id:cleanID(o.doc.id||1),enabled:true},{multi:false},cb
   tryrun.run o.query,o,cb
 
-temp.save=(o,cb)->
-  o.query=(o,cb)->
+temp.save=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     o.db.find {type:"temp",id:cleanID(o.doc.id||1),enabled:true},{multi:true},(e,r)->
       if r.length==0
         # create new temp doc when it is not found
@@ -787,8 +740,8 @@ temp.save=(o,cb)->
         o.db.update {type:"temp",id:cleanID(o.doc.id)},{$set:o.doc},{multi:false},cb
   tryrun.run o.query,o,cb
 
-temp.output=(o,cb)->
-  o.query=(o,cb)->
+temp.output=(o,cb=nf)->
+  o.query=(o,cb=nf)->
     text=""
     try
       text=fs.readFileSync("./output.log").toString()
@@ -798,21 +751,22 @@ temp.output=(o,cb)->
 #---
 
 routeHandler=(app,db)->
+  #app.use createIframe
+
   app.get "/size",(req,res)->
     stats = fs.statSync('/root/db')
-    res.send 200,stats.size
+    ressend res,stats.size
 
   app.get "/theme",(req,res)->
     mod.getTheme {db:db},(e,r)->
-      res.send 200,r
+      ressend res,r
 
   app.get "/language",(req,res)->
     mod.getLanguage {db:db},(e,r)->
-      res.send 200,r
+      ressend res,r
 
   app.get "/motd",(req,res)->
-    motd=fs.readFileSync('./resource/motd').toString()
-    res.send 200,motd
+    ressend res,fs.readFileSync('./resource/motd').toString()
 
   app.get "/server/stop",(req,res)->
     res.send 200,"OK"
@@ -827,15 +781,43 @@ routeHandler=(app,db)->
     ,500
   
   app.get "/user",(req,res)->
-    l req.auth
-    res.send 200,req.auth.username
-  
+    r=req.auth.username
+    #l result
+    ressend res,r
+
   app.post "/runsh",(req,res)->
     mod.runSH {db:db,script:req.body.script,shell:(req.body.shell||null),cwd:(req.body.cwd||"./")},(e,r)->
       if e
-        res.send 404,e.message
+        res.send 500,e.Message
       else
         res.send 200,r
+
+  app.get "/ajax",(req,res)->
+    mod.find {db:db,doc:req.query},(e,r)->
+      res.send 200,r
+
+  app.post "/ajax",(req,res)->
+    mod.create {db:db,doc:req.body},(e,r)->
+      res.send 200,r
+  
+  app.put "/ajax",(req,res)->
+    mod.update {db:db,doc:req.body},(e,r)->
+      res.send 200,r
+  
+  app.delete "/ajax",(req,res)->
+    mod.remove {db:db,doc:req.body},(e,r)->
+      res.send 200,r
+
+  app.get "/iframe",(req, res)->
+    res.set 'Content-Type','text/html'
+    res.send await nodeiframe.fetchFrame
+      url: req.query.url
+      baseHref: req.query.baseHref+"/iframe?url="
+      config: { cors: { script: true } }
+    #res.createIframe
+    #  url: req.query.url
+    #  baseHref: req.query.baseHref
+    #  config: { cors: { script: true } }
 
   app.get "/project",(req,res)->
     project.list {db:db},(e,r)->
@@ -847,7 +829,7 @@ routeHandler=(app,db)->
       fs.writeFileSync "./export.json",data
       l "project exported to ./export.json"
       if e
-        res.send 404,"Failed to import"
+        res.send 500,"Failed to import"
       else
         res.send 200,"OK"
 
