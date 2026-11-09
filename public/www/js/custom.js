@@ -823,8 +823,30 @@ note.getText=function(cb=nf){
                     $("#editorPage").removeClass("hide");
                     $("#editorPage").addClass("show");
                     hideEditor=!($("#editorPage").hasClass("active"));
-                    content=atob(response[0].text)
-                    $("#HTMLContent").html(content);
+                    
+                    content=""
+                    try{
+                        content=atob(response[0].text)
+                    }catch(e){}
+                    
+                    try{
+                        $("#HTMLContent").html(content);
+                    }catch(e){}
+
+                    try{
+                        converter = new showdown.Converter()
+
+                        converter.setOption('simplifiedAutoLink', true)
+                        converter.setOption('tasklists', true)
+                        converter.setOption('simpleLineBreaks', true)
+                        converter.setOption('parseImgDimensions', true)
+                        converter.setOption('tables', true)
+                        converter.setOption('moreStyling', true)
+                        
+                        htmlResult = converter.makeHtml(content)
+                        $("#MarkDownContent").html(htmlResult)
+                    }catch(e){}
+                    
                     editor.setValue(content);
                     temp.lastContent=content  // update last content upon chooen a new note
                     attachEnterKeyCMD()

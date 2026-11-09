@@ -52,9 +52,11 @@ block content
                     li.nav-item
                         a#expand.btn(href="#") <<
                     li.nav-item
-                        a#HTMLPageNav.btn(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="true") HTML
+                        a#HTMLPageNav.btn(href="#HTMLPage",data-bs-toggle="tab",data-bs-target="#HTMLPage",aria-controls="HTMLPage",aria-selected="false") HTML
                     li.nav-item
                         a#editorPageNav.btn(href="#editorPage",data-bs-toggle="tab",data-bs-target="#editorPage",aria-controls="editorPage",aria-selected="true") Editor
+                    li.nav-item
+                        a#MarkDownPageNav.btn(href="#MarkDownPage",data-bs-toggle="tab",data-bs-target="#MarkDownPage",aria-controls="markDownPage",aria-selected="false") MarkDown
                     li.nav-item
                         a#saveNoteNav(href="#") Save
                     li.nav-item
@@ -78,6 +80,8 @@ block content
                     .tab-pane.active#editorPage
                         #editor
                         #statusBar
+                    .tab-pane#MarkDownPage
+                        #MarkDownContent
     #popupInputBox.popup.fade
         input#popupInput(type="text",placeholder="Type something...")
         button#submitBtn.btn.btn-primary OK
