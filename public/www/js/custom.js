@@ -120,6 +120,15 @@ function cleanID(id) {
     return id2
 }
 
+function cleanText(text){
+    var result=""
+    try{
+        result = text.replace(/[^\x00-\xFF]/g, "")
+    }catch(e){}
+    return result;
+}
+
+
 function wget(url) {
     $.ajax({
         url: url,
@@ -946,7 +955,7 @@ note.saveas=function(name){
     $.ajax({
         url: '/note',
         type: 'POST',
-        data: {project:project.selected,section:section.selected,page:page.selected,name:name,text:btoa(editor.getValue())},
+        data: {project:project.selected,section:section.selected,page:page.selected,name:name,text:btoa(cleanText(editor.getValue()))},
         dataType: 'json', 
         success: function(response) {
             note.selected=cleanID(response.id)
@@ -963,7 +972,7 @@ note.duplicate=function(name){
     $.ajax({
         url: '/note',
         type: 'POST',
-        data: {project:project.selected,section:section.selected,page:page.selected,name:"copy of "+name,text:btoa(editor.getValue())},
+        data: {project:project.selected,section:section.selected,page:page.selected,name:"copy of "+name,text:btoa(cleanText(editor.getValue()))},
         dataType: 'json', 
         success: function(response) {
             note.selected=cleanID(response.id)
@@ -1021,7 +1030,7 @@ note.text = function () {
         $.ajax({
             url: '/note/text',
             type: 'PUT',
-            data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(editor.getValue())},
+            data: {project:project.selected,section:section.selected,page:page.selected,id:note.selected,text:btoa(cleanText(editor.getValue()))},
             dataType: 'json', 
             success: function(response) {
                 //l('successful:',response);
@@ -1058,7 +1067,7 @@ temp.save = function (cb=nf) {
     $.ajax({
         url: '/temp',
         type: 'POST',
-        data: {id:1,text:btoa(editor.getValue())},
+        data: {id:1,text:btoa(cleanText(editor.getValue()))},
         dataType: 'text', 
         success: function(response) {
             showalert("Temp file backed up.")  
