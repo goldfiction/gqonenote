@@ -287,8 +287,7 @@ mod.runOneScript=(o,cb=nf)->
     vm.createContext contextObject
     result=vm.runInContext o.code,contextObject
 
-    if output.trim()==""
-      output=result
+    output+="\n"+result
 
     cb null,output
 
