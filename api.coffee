@@ -92,6 +92,9 @@ async=r "async"
 _=r "lodash"
 CoffeeScript=r "coffeescript"
 nodeiframe=r "node-iframe"
+#Writable=require("stream").Writable
+{ Console } = require "node:console"
+{ Writable } = require 'node:stream'
 #createIframe=nodeiframe.createIframe
 #import createIframe from "node-iframe"
 configureResourceControl = nodeiframe.configureResourceControl
@@ -257,24 +260,40 @@ mod.getXPathScript=(o,cb=nf)->
       cb()
 
 mod.runOneScript=(o,cb=nf)->
-  contextObject=
-    o:o
-    db:o.db
-    eval:eval
-    require:require
-    console:console
-    spawn:spawn
-    exec:exec
-    async:async
-    _:_
-    fs:fs
-    global:global
-    xpath:mod.getXPathScript
-    runSH:mod.runSH
   try
-    result=vm.runInNewContext o.code,contextObject
-    cb null,result
+    output=""
+    
+    customStream = new Writable({write:(chunk, encoding, callback)->
+      output += chunk.toString()
+      callback()
+      return
+    })
+
+    contextObject=
+      o:o
+      db:o.db
+      eval:eval
+      require:require
+      console: new Console({ stdout: customStream, stderr: customStream })
+      spawn:spawn
+      exec:exec
+      async:async
+      _:_
+      fs:fs
+      global:global
+      xpath:mod.getXPathScript
+      runSH:mod.runSH
+
+    vm.createContext contextObject
+    result=vm.runInContext o.code,contextObject
+
+    if output.trim()==""
+      output=result
+
+    cb null,output
+
   catch e
+    l e
     cb e
   
 mod.restartServer=()->
